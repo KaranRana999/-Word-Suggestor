@@ -3,330 +3,552 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Autocomplete Word Web</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<meta name="theme-color" content="#111a16">
+<title>Autocomplete · Algorithm Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  body { background: radial-gradient(900px 420px at 50% 22%, rgba(37,99,235,.22), transparent 70%), #070d1f; }
-  .card { background: rgba(20,33,74,.55); border: 1px solid rgba(148,163,184,.16); box-shadow: 0 30px 80px rgba(0,0,0,.45); backdrop-filter: blur(14px); }
-  .shell { border: 2px solid transparent;
-           background: linear-gradient(#0e1a3f,#0e1a3f) padding-box, linear-gradient(90deg,rgba(148,163,184,.25),rgba(148,163,184,.25)) border-box; transition: box-shadow .2s; }
-  .shell:focus-within { background: linear-gradient(#0e1a3f,#0e1a3f) padding-box, linear-gradient(90deg,#38bdf8,#818cf8) border-box; box-shadow: 0 0 28px rgba(99,102,241,.35); }
-  .dropdown, .stat { background: rgba(12,22,52,.85); border: 1px solid rgba(148,163,184,.16); }
-  .stat { border-radius: 14px; padding: 12px 14px; }
-  .row { display: flex; align-items: center; gap: 16px; padding: 10px 20px; border-radius: 14px; cursor: pointer; }
-  .row .ico { width: 40px; height: 40px; border-radius: 9999px; display: grid; place-items: center; background: rgba(30,41,90,.7); color: #cbd5e1; flex: none; }
-  .row.active { background: rgba(37,99,235,.35); }
-  .row.active .ico { background: rgba(37,99,235,.55); }
-  .row .head { color: #fff; } .row .pre { color: #7dd3fc; } .row .rest { color: #60a5fa; } .row.active .rest { color: #67e8f9; }
-  .msg { padding: 18px 20px; color: rgba(203,213,225,.6); font-style: italic; }
-  .tab { padding: 8px 18px; border-radius: 12px; color: #94a3b8; transition: .2s; }
-  .tab:hover { color: #fff; } .tab.on { background: rgba(37,99,235,.35); color: #fff; }
-  .field { background: #0e1a3f; border: 2px solid rgba(148,163,184,.25); border-radius: 16px; padding: 14px 18px; font-size: 1.1rem; color: #fff; outline: none; }
-  .field:focus { border-color: #60a5fa; }
-  .btn { background: linear-gradient(90deg,#38bdf8,#818cf8); color: #06122e; font-weight: 600; border-radius: 16px; padding: 0 22px; }
-  .btn-ghost { border: 2px solid rgba(148,163,184,.3); color: #cbd5e1; border-radius: 16px; padding: 0 22px; }
-  .btn-ghost:hover { color: #fff; border-color: #f87171; }
-  .chip { display: inline-block; min-width: 30px; text-align: center; padding: 3px 9px; border-radius: 9999px; background: rgba(30,41,90,.8); border: 1px solid rgba(148,163,184,.3); font-size: .9rem; }
-  .chip.end { border-color: #34d399; color: #6ee7b7; }
-  .tree ul { margin-left: 14px; padding-left: 14px; border-left: 1px solid rgba(148,163,184,.25); }
-  .tree li { margin: 6px 0; }
-  .word { margin-left: 10px; font-size: .85rem; color: #6ee7b7; }
-  .more { margin-top: 4px; font-size: .8rem; color: #64748b; }
+  :root { color-scheme:light; --ink:#26352d; --muted:#78847c; --line:#e4e9e1; --green:#496d58; --green-dark:#365543; --green-soft:#e9f1e9; --amber:#bc8650; --amber-soft:#f8f0e7; --paper:#fffefa; --slab:'Roboto Slab',Rockwell,'Courier New',serif; }
+  * { box-sizing:border-box; font-family:var(--slab)!important; }
+  body { margin:0; min-height:100vh; background:radial-gradient(ellipse at 50% -16%,#e8eee5 0,transparent 50%),#f6f5f0; color:var(--ink); }
+  button,input { font:inherit; }
+  button:focus-visible,input:focus-visible { outline:3px solid rgba(73,109,88,.32);outline-offset:3px; }
+  .topbar { height:72px; display:flex;align-items:center;justify-content:space-between;padding:0 max(24px,calc((100vw - 1160px)/2));background:rgba(255,254,250,.82);border-bottom:1px solid var(--line); }
+  .brand { display:flex;align-items:center;gap:12px;font-size:1rem;font-weight:600;letter-spacing:-.025em; }
+  .brand-mark { display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:#e8f0e8;color:var(--green); }
+  .brand-mark svg { width:20px;height:20px; }
+  .connection { display:flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid #dce7dc;border-radius:999px;background:#f1f6f0;color:#5b725f;font-size:.75rem; }
+  .status-dot { width:8px;height:8px;border-radius:50%;background:#6e9a72;box-shadow:0 0 0 3px rgba(110,154,114,.14); }
+  .app-shell { width:min(1120px,calc(100% - 40px));margin:0 auto;padding:52px 0 64px; }
+  .intro { margin:0 auto 28px;max-width:760px;text-align:center; }
+  .eyebrow { margin:0 0 10px;color:var(--green);font-size:.68rem;font-weight:700;letter-spacing:.17em;text-transform:uppercase; }
+  h1 { margin:0;color:#2d3d33;font-size:clamp(2rem,4vw,3rem);font-weight:500;line-height:1.15;letter-spacing:-.055em; }
+  .intro-copy { margin:12px 0 0;color:var(--muted);font-size:.92rem;line-height:1.7; }
+  .search-card,.lab-card,.word-manager { background:rgba(255,254,250,.94);border:1px solid #e6e9e2;border-radius:22px;box-shadow:0 18px 48px rgba(43,60,47,.055); }
+  .search-card { position:relative;max-width:820px;margin:0 auto 24px;padding:22px 24px 18px;z-index:5; }
+  .search-label { display:block;margin:0 0 10px;color:#68766c;font-size:.74rem;font-weight:600; }
+  .search-shell { display:flex;align-items:center;gap:13px;min-height:60px;padding:0 15px 0 18px;border:1px solid #d9e0d8;border-radius:14px;background:#fff;box-shadow:0 3px 10px rgba(41,58,46,.035);transition:border-color .18s,box-shadow .18s; }
+  .search-shell:focus-within { border-color:#83a28a;box-shadow:0 0 0 4px rgba(73,109,88,.11); }
+  .search-icon { width:21px;height:21px;flex:none;color:#738178; }
+  #searchInput { flex:1;min-width:0;border:0;outline:0!important;background:transparent;color:#2c3b32;font-size:1.02rem; }
+  #searchInput::placeholder { color:#a1aaa2; }
+  .key-hint { padding:4px 8px;border-radius:7px;background:#f0f3ee;color:#748077;font-size:.68rem;white-space:nowrap; }
+  .search-meta { display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:11px;color:#929b93;font-size:.7rem; }
+  .clear-btn { padding:4px 0;border:0;background:none;color:#78847c;cursor:pointer; }
+  .clear-btn:hover { color:#a15e55; }
+  .suggestions { position:absolute;top:calc(100% - 12px);left:24px;right:24px;overflow:hidden;border:1px solid #e0e6de;border-radius:15px;background:#fff;box-shadow:0 18px 40px rgba(39,57,44,.12); }
+  .suggestions[hidden] { display:none; }
+  #suggestionList { margin:0;padding:7px;list-style:none; }
+  .suggestion { display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:#344238;font-size:.91rem;cursor:pointer; }
+  .suggestion:hover,.suggestion.active { background:#eef4ee; }
+  .suggestion-icon { display:grid;place-items:center;width:28px;height:28px;flex:none;border-radius:50%;background:#f1f4ef;color:#75857a; }
+  .suggestion-icon svg { width:14px;height:14px; }
+  .suggestion .prefix { color:#385a43;font-weight:700; }
+  .suggestion .rest { color:#69766c; }
+  .suggestion-note { padding:11px 14px;border-top:1px solid #edf0eb;color:#889289;font-size:.69rem; }
+  .lab-card { padding:24px 28px 28px; }
+  .lab-head { display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:18px; }
+  .lab-head h2 { margin:0;font-size:1.38rem;font-weight:500;letter-spacing:-.04em; }
+  .lab-head p:not(.eyebrow) { margin:6px 0 0;color:var(--muted);font-size:.79rem;line-height:1.55; }
+  .primary-btn,.secondary-btn,.control-btn { display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:0 14px;border-radius:11px;font-size:.75rem;font-weight:600;cursor:pointer;transition:background .18s,border-color .18s,transform .18s; }
+  .primary-btn { border:1px solid var(--green);background:var(--green);color:#fff;box-shadow:0 4px 10px rgba(54,91,66,.13); }
+  .primary-btn:hover { background:var(--green-dark);transform:translateY(-1px); }
+  .secondary-btn,.control-btn { border:1px solid #dfe5dd;background:#fff;color:#5f6e63; }
+  .secondary-btn:hover,.control-btn:hover:not(:disabled) { border-color:#adc0af;background:#f5f8f3;color:#355a43; }
+  .control-btn:disabled { opacity:.45;cursor:not-allowed; }
+  .lab-tabs { display:flex;gap:7px;overflow-x:auto;margin:0 0 15px;padding:0 0 13px;border-bottom:1px solid var(--line); }
+  .lab-tab { min-height:37px;padding:0 14px;border:0;border-radius:999px;background:transparent;color:#778279;font-size:.75rem;font-weight:600;white-space:nowrap;cursor:pointer; }
+  .lab-tab:hover { background:#f2f4ef;color:var(--ink); }
+  .lab-tab[aria-selected="true"] { background:var(--green);color:#fff; }
+  .stepbar { display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 20px;padding:10px;border:1px solid #edf0eb;border-radius:13px;background:#fafbf8; }
+  .stepbar .prefix-label { flex:1;min-width:140px;color:#768178;font-size:.72rem; }
+  .stepbar .prefix-label strong { color:#34493a; }
+  .step-count { min-width:80px;text-align:right;color:#8a938b;font-size:.68rem; }
+  .panel[hidden] { display:none; }
+  .panel-title { margin:0;color:#334339;font-size:.96rem;font-weight:600; }
+  .panel-copy { margin:5px 0 14px;color:#879188;font-size:.72rem;line-height:1.6; }
+  .diagram-card { overflow:auto;border:1px solid #e8ece5;border-radius:15px;background:linear-gradient(180deg,#fffefa,#fbfcf8); }
+  .diagram-card svg { display:block;min-width:640px;width:100%;height:270px; }
+  .diagram-legend { display:flex;gap:15px;flex-wrap:wrap;margin:12px 0;color:#7d887f;font-size:.67rem; }
+  .legend-item { display:flex;align-items:center;gap:6px; }
+  .legend-dot { width:9px;height:9px;border-radius:50%;background:#e9f1e9;border:1px solid #9bb39d; }
+  .legend-dot.active { background:#d49a5e;border-color:#c1854a; }
+  .legend-dot.terminal { background:#fff;border:2px solid #6d9873; }
+  .explain { display:flex;align-items:flex-start;gap:10px;margin-top:14px;padding:13px 14px;border:1px solid #e7ece5;border-radius:12px;background:#f8faf6;color:#68766c;font-size:.74rem;line-height:1.65; }
+  .explain-mark { display:grid;place-items:center;width:22px;height:22px;flex:none;border-radius:50%;background:#e9f1e9;color:var(--green);font-weight:700; }
+  .metrics { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px; }
+  .metric { padding:12px 13px;border:1px solid #e8ece5;border-radius:12px;background:#fff; }
+  .metric-label { color:#89938a;font-size:.64rem; }
+  .metric-value { margin-top:4px;color:#3d5c46;font-size:1.04rem;font-weight:600; }
+  .compare-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+  .algorithm-card { min-width:0;padding:16px;border:1px solid #e6ebe4;border-radius:15px;background:#fff; }
+  .algorithm-title { display:flex;align-items:flex-start;justify-content:space-between;gap:10px; }
+  .algorithm-title h3 { margin:0;font-size:.9rem;font-weight:600; }
+  .complexity { padding:4px 7px;border-radius:7px;background:#f0f4ef;color:#66806b;font-size:.61rem;white-space:nowrap; }
+  .algorithm-card p { margin:5px 0 14px;color:#89938a;font-size:.68rem;line-height:1.5; }
+  .sequence { display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-height:45px; }
+  .sequence-node,.scan-word { display:grid;place-items:center;min-width:32px;height:32px;padding:0 8px;border:1px solid #e3e9e2;border-radius:9px;background:#f9faf7;color:#89938a;font-size:.75rem;transition:all .2s; }
+  .sequence-node.visited { border-color:#9bb69e;background:#ecf4ec;color:#3f6748; }
+  .sequence-node.current { border-color:#ce965e;background:#fbf2e8;color:#8a5c2f;box-shadow:0 0 0 3px rgba(188,134,80,.1); }
+  .sequence-arrow { color:#a2aca3;font-size:.7rem; }
+  .scan-sample { display:flex;gap:5px;flex-wrap:wrap;min-height:72px;align-content:flex-start; }
+  .scan-word { max-width:100%;height:27px;font-size:.64rem; }
+  .scan-word.checked { background:#f8f0e7;border-color:#e1c6a8;color:#865f37; }
+  .scan-word.match { background:#edf5ec;border-color:#a6c2a5;color:#426a49; }
+  .scan-more { align-self:center;color:#939c93;font-size:.64rem; }
+  .algorithm-result { margin-top:12px;padding-top:11px;border-top:1px solid #eef1ec;color:#77837a;font-size:.67rem;line-height:1.55; }
+  .heap-layout { display:grid;grid-template-columns:minmax(0,1.3fr) minmax(240px,.7fr);gap:14px; }
+  .heap-card,.ranked-card { padding:16px;border:1px solid #e6ebe4;border-radius:15px;background:#fff; }
+  .heap-header { display:flex;justify-content:space-between;gap:10px;align-items:center; }
+  .heap-header h3,.ranked-card h3 { margin:0;font-size:.84rem;font-weight:600; }
+  .heap-badge { padding:4px 8px;border-radius:999px;background:#f8f0e7;color:#92683d;font-size:.62rem; }
+  #heapGraph { display:block;width:100%;height:235px;margin:4px auto 0; }
+  .candidate-box { display:flex;align-items:center;gap:10px;margin-top:8px;padding:11px 12px;border-radius:11px;background:#f9f8f3; }
+  .candidate-label { color:#879188;font-size:.65rem; }
+  .candidate-word { color:#395a43;font-size:.88rem;font-weight:600; }
+  .candidate-action { margin:8px 0 0;color:#7c877e;font-size:.68rem;line-height:1.5; }
+  .ranked-card h3 { margin-bottom:11px; }
+  .ranked-list { display:flex;flex-direction:column;gap:7px;margin:0;padding:0;list-style:none; }
+  .ranked-list li { display:flex;align-items:center;gap:9px;padding:8px 9px;border:1px solid #edf0eb;border-radius:9px;background:#fbfcf9;color:#526157;font-size:.7rem; }
+  .rank-num { display:grid;place-items:center;width:21px;height:21px;border-radius:7px;background:#edf3ec;color:#55745a;font-size:.61rem;font-weight:700; }
+  .ranked-empty { color:#9aa39b;font-size:.68rem;line-height:1.55; }
+  .word-manager { margin-top:18px;padding:0 20px;box-shadow:0 10px 30px rgba(43,60,47,.035); }
+  .word-manager summary { padding:17px 0;color:#56665b;font-size:.78rem;font-weight:600;cursor:pointer; }
+  .word-manager-body { padding:0 0 18px; }
+  .word-form { display:flex;gap:8px; }
+  .word-form input { flex:1;min-width:0;height:42px;padding:0 12px;border:1px solid #dfe5dd;border-radius:10px;background:#fff;color:var(--ink);font-size:.74rem; }
+  .word-form button { min-height:42px;padding:0 12px; }
+  #wordMsg,#wordStats { min-height:1.3em;margin:9px 0 0;color:#7c887e;font-size:.68rem; }
+  .attribution { margin:18px 0 0;text-align:center;color:#929b93;font-size:.65rem; }
+  .attribution a { color:#607966;text-decoration:underline;text-underline-offset:2px; }
+  .empty-state { padding:25px;text-align:center;color:#89938a;font-size:.75rem; }
+  :root { color-scheme:dark; --ink:#e4ebe3; --muted:#a3afa4; --line:#34453a; --green:#9fbea2; --green-dark:#294633; --green-soft:#27392d; --amber:#d3a16b; --amber-soft:#403326; --paper:#1b2821; }
+  body { background:radial-gradient(ellipse at 50% -15%,#263c31 0,transparent 49%),#111a16;color:#e3ebe3; }
+  .topbar { background:rgba(20,30,25,.9);border-color:#34443a;color:#e3ebe3; }
+  .brand-mark { background:#26392d;color:#a9c8aa; }
+  .connection { border-color:#3b5040;background:#233329;color:#bdd0bd; }
+  .search-card,.lab-card,.word-manager { background:rgba(27,40,33,.96);border-color:#38493e;box-shadow:0 20px 54px rgba(0,0,0,.2); }
+  .eyebrow { color:#a8c5a8; }
+  h1,.lab-head h2 { color:#e9eee7; }
+  .intro-copy,.lab-head p:not(.eyebrow) { color:#a5b0a6; }
+  .search-label { color:#bbc6bc; }
+  .search-shell { border-color:#405347;background:#17231d;box-shadow:0 3px 12px rgba(0,0,0,.13); }
+  .search-shell:focus-within { border-color:#83a88a;box-shadow:0 0 0 4px rgba(116,158,122,.15); }
+  .search-icon { color:#a3b1a4; }
+  #searchInput { color:#e9eee7; }
+  #searchInput::placeholder { color:#829087; }
+  .key-hint { background:#2d3b32;color:#bac8bb; }
+  .search-meta { color:#91a096; }
+  .clear-btn { color:#a4b0a6; }
+  .suggestions { border-color:#415247;background:#1b2921;box-shadow:0 18px 42px rgba(0,0,0,.36); }
+  .suggestion { color:#e1e9e0; }
+  .suggestion:hover,.suggestion.active { background:#2b3c30; }
+  .suggestion-icon { background:#28382d;color:#a4b6a5; }
+  .suggestion .prefix { color:#c2dbbf; }
+  .suggestion .rest { color:#b2beb3; }
+  .suggestion-note { border-color:#35443a;color:#94a196; }
+  .search-label,.panel-title,.algorithm-title h3,.heap-header h3,.ranked-card h3 { color:#dce6dc; }
+  .primary-btn { border-color:#78977b;background:#587d60;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.18); }
+  .primary-btn:hover { background:#668a6d; }
+  .secondary-btn,.control-btn { border-color:#435449;background:#202e26;color:#c0cbc1; }
+  .secondary-btn:hover,.control-btn:hover:not(:disabled) { border-color:#6f9476;background:#293a2e;color:#e0ebdf; }
+  .lab-tabs { border-color:#39493e; }
+  .lab-tab { color:#a0aca2; }
+  .lab-tab:hover { background:#26362b;color:#e4ebe3; }
+  .lab-tab[aria-selected="true"] { background:#55765b;color:#fff; }
+  .stepbar { border-color:#35463b;background:#1c2a22; }
+  .stepbar .prefix-label { color:#a0ada2; }
+  .stepbar .prefix-label strong { color:#d5e0d5; }
+  .step-count { color:#9ba79d; }
+  .panel-copy { color:#9ca99f; }
+  .diagram-card { border-color:#3b4c40;background:linear-gradient(180deg,#1b2922,#18251e); }
+  .diagram-legend { color:#a1aea3; }
+  .legend-dot { background:#2d4031;border-color:#708d73; }
+  .legend-dot.active { background:#d3a16b;border-color:#d3a16b; }
+  .legend-dot.terminal { background:#1b2922;border-color:#91b194; }
+  .explain { border-color:#3a4b3f;background:#202f26;color:#b1beb2; }
+  .explain-mark { background:#314735;color:#b9d0b8; }
+  .metric,.algorithm-card,.heap-card,.ranked-card { border-color:#394a3e;background:#1d2b23; }
+  .metric-label { color:#9ca99f; }
+  .metric-value { color:#c5d9c4; }
+  .complexity { background:#2b3c30;color:#b5c8b4; }
+  .algorithm-card p { color:#9eaaa0; }
+  .sequence-node,.scan-word { border-color:#3e5043;background:#233128;color:#9eaaa0; }
+  .sequence-node.visited { border-color:#729576;background:#2c4031;color:#c6dec4; }
+  .sequence-node.current { border-color:#c89967;background:#453728;color:#f0c992;box-shadow:0 0 0 3px rgba(211,161,107,.13); }
+  .sequence-arrow,.scan-more { color:#91a095; }
+  .scan-word.checked { background:#443728;border-color:#876947;color:#e0bd91; }
+  .scan-word.match { background:#2d4433;border-color:#67886a;color:#c7dfc5; }
+  .algorithm-result { border-color:#39493e;color:#aab7ac; }
+  .heap-badge { background:#453728;color:#e1bb8f; }
+  .candidate-box { background:#26352b; }
+  .candidate-label { color:#a0aca2; }
+  .candidate-word { color:#cce0ca; }
+  .candidate-action { color:#a6b2a8; }
+  .ranked-list li { border-color:#39493e;background:#233128;color:#c4d0c5; }
+  .rank-num { background:#304432;color:#bfdbbd; }
+  .ranked-empty { color:#a0aca2; }
+  .word-manager summary { color:#cad6ca; }
+  .word-form input { border-color:#405246;background:#17231d;color:#e3ebe3; }
+  .word-form input::placeholder { color:#8b998e; }
+  #wordMsg,#wordStats { color:#a4b0a6; }
+  .attribution { color:#92a096; }
+  .attribution a { color:#b3d0b3; }
+  .empty-state { color:#a7b3a8; }
+  #trieGraph text,#heapGraph text { font-family:var(--slab); }
+  @media(max-width:760px) { .app-shell{width:min(100% - 28px,680px);padding-top:36px}.lab-card{padding:20px}.lab-head{align-items:flex-start;flex-direction:column}.compare-grid{grid-template-columns:1fr}.heap-layout{grid-template-columns:1fr}.ranked-card{order:2}.heap-card{order:1} }
+  @media(max-width:480px) { .topbar{height:64px;padding:0 15px}.brand{font-size:.82rem}.connection{padding:7px 9px;font-size:.66rem}.app-shell{width:calc(100% - 20px);padding-top:29px}.intro{margin-bottom:20px}.intro-copy{font-size:.8rem}.search-card{padding:17px 14px 15px;border-radius:17px}.search-shell{min-height:55px;padding:0 11px}.search-meta{font-size:.62rem}.suggestions{left:14px;right:14px}.lab-card{padding:16px 13px 20px;border-radius:18px}.lab-head h2{font-size:1.2rem}.lab-tabs{gap:3px}.lab-tab{padding:0 10px;font-size:.68rem}.stepbar{gap:5px;padding:8px}.control-btn,.primary-btn,.secondary-btn{min-height:37px;padding:0 10px;font-size:.68rem}.stepbar .prefix-label{min-width:100%;}.step-count{flex:1}.metrics{grid-template-columns:1fr 1fr}.diagram-card svg{height:240px}.word-manager{padding:0 14px}.word-form{flex-wrap:wrap}.word-form input{flex-basis:100%} }
 </style>
 </head>
-<body class="min-h-screen text-slate-100 font-sans">
-
-<svg width="0" height="0" class="absolute"><defs>
-  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#a78bfa"/></linearGradient>
-</defs></svg>
-
-<header class="h-[78px] border-b border-white/10 bg-slate-900/40 backdrop-blur flex items-center justify-between px-6 md:px-24">
-  <div class="flex items-center gap-4">
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="url(#g)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
-      <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
-      <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M12 18V5"/>
-    </svg>
-    <span class="text-xl tracking-wide">Autocomplete Word Web</span>
-  </div>
-  <div class="flex items-center gap-2 rounded-full bg-slate-800/70 border border-white/5 px-4 py-2 text-sm">
-    <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span><span id="statusText">AI Suggest</span>
-  </div>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M6 7h6M12 12h6M6 17h6"/><circle cx="5" cy="7" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="17" r="2"/></svg></span><span>Autocomplete · Algorithm Lab</span></div>
+  <div class="connection"><span id="statusDot" class="status-dot"></span><span id="statusText">Connecting</span></div>
 </header>
 
-<main class="flex justify-center px-4 pt-16 pb-16">
-  <div class="card w-full max-w-[830px] rounded-[32px] p-10">
+<main class="app-shell">
+  <section class="intro">
+    <p class="eyebrow">Interactive data structures</p>
+    <h1>See autocomplete at work.</h1>
+    <p class="intro-copy">Explore how a trie finds a prefix, how a linear scan compares, and how a min-heap keeps the best suggestions.</p>
+  </section>
 
-    <div class="flex items-center gap-6 mb-8">
-      <svg width="48" height="48" viewBox="0 0 48 48">
-        <path d="M20 6 C21.4 17 27 22.6 38 24 C27 25.4 21.4 31 20 42 C18.6 31 13 25.4 2 24 C13 22.6 18.6 17 20 6Z" fill="url(#g)"/>
-        <path d="M39 4 C39.4 7 41 8.6 44 9 C41 9.4 39.4 11 39 14 C38.6 11 37 9.4 34 9 C37 8.6 38.6 7 39 4Z" fill="url(#g)"/>
-        <path d="M38 33 C38.3 35.2 39.3 36.2 41.5 36.5 C39.3 36.8 38.3 37.8 38 40 C37.7 37.8 36.7 36.8 34.5 36.5 C36.7 36.2 37.7 35.2 38 33Z" fill="url(#g)" opacity=".8"/>
-      </svg>
-      <div>
-        <h1 class="text-3xl font-medium text-white">Autocomplete Word Web</h1>
-        <p class="text-slate-400 mt-1">Type a word and get smart suggestions</p>
-      </div>
+  <section class="search-card" aria-label="Autocomplete search">
+    <label class="search-label" for="searchInput">Try autocomplete or choose a prefix to explore</label>
+    <div class="search-shell">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+      <input id="searchInput" type="text" autocomplete="off" spellcheck="false" placeholder="Try “app” or “new y”…" role="combobox" aria-expanded="false" aria-controls="suggestionList" aria-autocomplete="list">
+      <span id="tabHint" class="key-hint" hidden>↑ ↓ choose · Tab accept</span>
+      <button id="clearBtn" class="clear-btn" type="button" aria-label="Clear search">×</button>
+    </div>
+    <div class="search-meta"><span>Type to see word and city suggestions</span><span>Choose a one-word prefix for the algorithm views</span></div>
+    <div id="dropdown" class="suggestions" hidden>
+      <ul id="suggestionList" role="listbox"></ul>
+      <div class="suggestion-note">Autocomplete suggestions · use ↑ ↓ and Tab to accept</div>
+    </div>
+  </section>
+
+  <section class="lab-card" aria-labelledby="labTitle">
+    <div class="lab-head">
+      <div><p class="eyebrow">Watch the algorithm</p><h2 id="labTitle">Choose a visualization</h2><p>Enter a prefix above, then step through the same search in each view.</p></div>
+      <button id="runLabBtn" class="primary-btn" type="button">Visualize prefix <span aria-hidden="true">→</span></button>
+    </div>
+    <nav class="lab-tabs" role="tablist" aria-label="Algorithm visualizations">
+      <button class="lab-tab" id="tab-trie" role="tab" aria-selected="true" aria-controls="panel-trie" data-tab="trie">01 · Trie explorer</button>
+      <button class="lab-tab" id="tab-compare" role="tab" aria-selected="false" aria-controls="panel-compare" data-tab="compare">02 · Trie vs. scan</button>
+      <button class="lab-tab" id="tab-topk" role="tab" aria-selected="false" aria-controls="panel-topk" data-tab="topk">03 · Top‑K heap</button>
+    </nav>
+    <div class="stepbar" aria-label="Visualization controls">
+      <span id="prefixLabel" class="prefix-label">Prefix: <strong>—</strong></span>
+      <button id="resetStep" class="control-btn" type="button" disabled>Reset</button>
+      <button id="prevStep" class="control-btn" type="button" disabled>← Back</button>
+      <button id="nextStep" class="control-btn" type="button" disabled>Step →</button>
+      <button id="playStep" class="control-btn" type="button" disabled>Play</button>
+      <span id="stepCount" class="step-count">Enter a prefix to begin</span>
     </div>
 
-    <nav class="flex flex-wrap gap-2 mb-8 border-b border-white/10 pb-4">
-      <button class="tab on" data-tab="search">Search</button>
-      <button class="tab" data-tab="bench">Benchmark</button>
-      <button class="tab" data-tab="words">Words</button>
-      <button class="tab" data-tab="viz">Visualizer</button>
-    </nav>
-
-    <!-- SEARCH -->
-    <section id="p-search" class="panel">
-      <div class="shell rounded-[22px] flex items-center gap-4 px-6 h-[72px]">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="searchInput" type="text" autocomplete="off" autofocus spellcheck="false" placeholder="Type a word..."
-               role="combobox" aria-expanded="false" aria-controls="list"
-               class="flex-1 bg-transparent outline-none text-xl text-white placeholder-slate-500">
-        <span id="tabHint" class="hidden rounded-lg bg-slate-700/50 px-3 py-1.5 text-sm text-slate-200">Tab ↵</span>
-      </div>
-      <div id="dropdown" class="dropdown hidden mt-3 rounded-[22px] overflow-hidden">
-        <ul id="list" role="listbox" class="p-2"></ul>
-        <div class="flex items-center justify-between border-t border-white/10 px-5 py-4 text-sm text-slate-400">
-          <span class="flex items-center gap-2">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="url(#g)"><path d="M12 2c.6 5.5 4.5 9.4 10 10-5.5.6-9.4 4.5-10 10-.6-5.5-4.5-9.4-10-10 5.5-.6 9.4-4.5 10-10Z"/></svg>
-            Suggestions powered by word prediction
-          </span>
-          <button id="clearBtn" type="button" class="flex items-center gap-2 text-base text-slate-300 hover:text-white transition">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>
-            Clear
-          </button>
-        </div>
-      </div>
+    <section id="panel-trie" class="panel" role="tabpanel" aria-labelledby="tab-trie">
+      <h3 class="panel-title">Follow the prefix through the trie</h3>
+      <p class="panel-copy">Each circle is a character node. The highlighted route follows your prefix; the branches after it contain possible completions.</p>
+      <div class="diagram-card"><svg id="trieGraph" viewBox="0 0 760 270" role="img" aria-label="Trie path visualization"></svg></div>
+      <div class="diagram-legend"><span class="legend-item"><i class="legend-dot active"></i>Current step</span><span class="legend-item"><i class="legend-dot"></i>Prefix path</span><span class="legend-item"><i class="legend-dot terminal"></i>Word ends here</span></div>
+      <div id="trieExplain" class="explain"><span class="explain-mark">i</span><span>Type a prefix and choose “Visualize prefix” to explore its path and matching branches.</span></div>
+      <div class="metrics"><div class="metric"><div class="metric-label">Prefix characters</div><div id="trieMetricChars" class="metric-value">—</div></div><div class="metric"><div class="metric-label">Trie nodes visited</div><div id="trieMetricNodes" class="metric-value">—</div></div><div class="metric"><div class="metric-label">Matching words</div><div id="trieMetricMatches" class="metric-value">—</div></div></div>
     </section>
 
-    <!-- BENCHMARK -->
-    <section id="p-bench" class="panel hidden">
-      <div class="flex gap-3">
-        <input id="benchInput" class="field flex-1" placeholder="Prefix, e.g. auto" autocomplete="off">
-        <button id="benchBtn" class="btn">Run</button>
+    <section id="panel-compare" class="panel" role="tabpanel" aria-labelledby="tab-compare" hidden>
+      <h3 class="panel-title">Two ways to find the same prefix</h3>
+      <p class="panel-copy">Step both lanes together. The trie follows a path; a linear scan checks dictionary entries one by one.</p>
+      <div class="compare-grid">
+        <article class="algorithm-card">
+          <div class="algorithm-title"><h3>Trie lookup</h3><span class="complexity">prefix path + matches</span></div>
+          <p>Jump to the prefix by following one edge per character.</p>
+          <div id="compareTrie" class="sequence" aria-label="Trie nodes visited"></div>
+          <div id="compareTrieResult" class="algorithm-result">Run a visualization to compare.</div>
+        </article>
+        <article class="algorithm-card">
+          <div class="algorithm-title"><h3>Linear scan</h3><span class="complexity">checks every word</span></div>
+          <p>Check entries in sequence and keep the ones that start with the prefix.</p>
+          <div id="compareScan" class="scan-sample" aria-label="Sample words checked by linear scan"></div>
+          <div id="compareScanResult" class="algorithm-result">Run a visualization to compare.</div>
+        </article>
       </div>
-      <div id="benchOut" class="mt-6 text-slate-300"></div>
-      <p class="mt-6 text-sm text-slate-500">Short prefixes touch more of the trie, because the search collects every match below the prefix before keeping the top 5. Longer prefixes show the biggest gap.</p>
+      <div id="compareExplain" class="explain"><span class="explain-mark">i</span><span>The two lanes will advance together, so you can compare the work at each step.</span></div>
     </section>
 
-    <!-- WORDS -->
-    <section id="p-words" class="panel hidden">
-      <div class="flex gap-3">
-        <input id="wordInput" class="field flex-1" placeholder="Word (letters a-z only)" autocomplete="off">
-        <button id="addBtn" class="btn">Add</button>
-        <button id="delBtn" class="btn-ghost">Delete</button>
+    <section id="panel-topk" class="panel" role="tabpanel" aria-labelledby="tab-topk" hidden>
+      <h3 class="panel-title">Watch the min-heap keep the best five</h3>
+      <p class="panel-copy">Each matching word is considered. The root holds the weakest of the current top five; a better candidate can replace it.</p>
+      <div class="heap-layout">
+        <article class="heap-card">
+          <div class="heap-header"><h3>Candidate and heap</h3><span id="heapPosition" class="heap-badge">Ready</span></div>
+          <div class="candidate-box"><span class="candidate-label">Candidate</span><span id="candidateWord" class="candidate-word">—</span></div>
+          <svg id="heapGraph" viewBox="0 0 480 235" role="img" aria-label="Min-heap with up to five suggestion candidates"></svg>
+          <p id="candidateAction" class="candidate-action">Run a visualization to see candidates enter the heap.</p>
+        </article>
+        <article class="ranked-card"><h3>Final suggestion order</h3><ol id="rankedList" class="ranked-list"><li class="ranked-empty">The final top five will appear here when the walkthrough finishes.</li></ol><div id="topkSummary" class="algorithm-result">Heap order is different from the final ranked suggestion order.</div></article>
       </div>
-      <p id="wordMsg" class="mt-5 min-h-[1.5rem]"></p>
-      <p id="wordStats" class="mt-2 text-sm text-slate-500"></p>
-      <p class="mt-6 text-sm text-slate-500">Changes live in memory only and reset when server.py restarts. An added word gets the top frequency so it ranks first in suggestions.</p>
+      <div id="topkExplain" class="explain"><span class="explain-mark">i</span><span>The heap is a small priority queue that keeps only the best five matches.</span></div>
     </section>
+  </section>
 
-    <!-- VISUALIZER -->
-    <section id="p-viz" class="panel hidden">
-      <input id="vizInput" class="field w-full" placeholder="Type a prefix to explore (empty = root)" autocomplete="off">
-      <div id="vizPath" class="flex flex-wrap items-center gap-2 mt-5"></div>
-      <p class="mt-3 text-sm text-slate-500">Green outline = a word ends at this node.</p>
-      <div id="vizTree" class="tree mt-3 max-h-[420px] overflow-auto"></div>
-    </section>
-
-  </div>
+  <details id="wordManager" class="word-manager">
+    <summary>Dictionary tools</summary>
+    <div class="word-manager-body">
+      <div class="word-form"><input id="wordInput" type="text" placeholder="Add or delete a word (a–z)" autocomplete="off"><button id="addBtn" class="secondary-btn" type="button">Add word</button><button id="delBtn" class="secondary-btn" type="button">Delete word</button></div>
+      <p id="wordMsg"></p><p id="wordStats"></p>
+    </div>
+  </details>
+  <p class="attribution">City names use <a href="https://www.geonames.org/" target="_blank" rel="noreferrer">GeoNames</a> · Algorithm walkthroughs use the word trie.</p>
 </main>
 
 <script>
   const BASE = 'http://localhost:5000';
-  const $ = (id) => document.getElementById(id);
-  const input = $('searchInput'), dropdown = $('dropdown'), list = $('list'), tabHint = $('tabHint');
+  const $ = id => document.getElementById(id);
+  const input = $('searchInput'), dropdown = $('dropdown'), list = $('suggestionList'), tabHint = $('tabHint');
   const statusDot = $('statusDot'), statusText = $('statusText');
-
-  let debounceTimer, requestId = 0;
-  let state = { head: '', items: [], active: 0 };
+  let debounceTimer, requestId = 0, labData = null, treeData = null, activeMode = 'trie', currentStep = 0, playTimer = null;
+  let suggestionState = { items: [], active: 0 };
 
   async function api(path, opts) {
     let res;
     try { res = await fetch(BASE + path, opts); }
-    catch (e) { setOnline(false); throw new Error('Cannot reach the server on localhost:5000. Is server.py running?'); }
+    catch (e) { setOnline(false); throw new Error('Cannot reach the autocomplete service on localhost:5000. Start autocomplete.py and try again.'); }
     setOnline(true);
     const data = await res.json().catch(() => ({}));
+    if (!res.ok && res.status === 404 && path.startsWith('/api/lab')) {
+      throw new Error('The running backend is an older version. Stop it and restart autocomplete.py, then try Visualize prefix again.');
+    }
     if (!res.ok) throw new Error(data.error || 'Request failed');
     return data;
   }
   function setOnline(ok) {
-    statusDot.className = 'w-2.5 h-2.5 rounded-full ' + (ok ? 'bg-emerald-400' : 'bg-red-400');
-    statusText.textContent = ok ? 'AI Suggest' : 'Offline';
+    statusDot.style.background = ok ? '#6e9a72' : '#cc755f';
+    statusText.textContent = ok ? 'Service online' : 'Service offline';
   }
-
-  /* ---------- tabs ---------- */
-  const tabs = document.querySelectorAll('[data-tab]');
-  function showTab(name) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('hidden', p.id !== 'p-' + name));
-    tabs.forEach(t => t.classList.toggle('on', t.dataset.tab === name));
-    if (name === 'words') loadStats();
-    if (name === 'viz') loadTree();
-    if (name === 'search') input.focus();
-  }
-  tabs.forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
-
-  /* ---------- search (per-word: a space resets the lookup) ---------- */
   function splitInput(text) {
     const m = text.match(/^([\s\S]*\s)?(\S*)$/);
     return { head: m[1] || '', word: m[2] };
   }
-  function hide() {
+  function hideSuggestions() {
     clearTimeout(debounceTimer); requestId++;
-    state = { head: '', items: [], active: 0 };
-    list.innerHTML = '';
-    dropdown.classList.add('hidden'); tabHint.classList.add('hidden');
+    suggestionState = { items: [], active: 0 };
+    list.innerHTML = ''; dropdown.hidden = true; tabHint.hidden = true;
     input.setAttribute('aria-expanded', 'false');
   }
-  function showMessage(text) {
+  const searchIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>';
+  function renderSuggestions(head, word, items) {
+    suggestionState = { items, active: 0 };
     list.innerHTML = '';
-    const li = document.createElement('li');
-    li.className = 'msg'; li.textContent = text;
-    list.appendChild(li);
-    dropdown.classList.remove('hidden'); tabHint.classList.add('hidden');
-  }
-  const SEARCH_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
-  function render(head, word, items) {
-    state = { head, items, active: 0 };
-    list.innerHTML = '';
-    items.forEach((s, i) => {
+    items.forEach((value, i) => {
       const li = document.createElement('li');
-      li.className = 'row text-lg'; li.setAttribute('role', 'option');
-      li.innerHTML = '<span class="ico">' + SEARCH_ICON + '</span><span class="label"></span>';
-      const label = li.querySelector('.label');
-      [['head', head], ['pre', s.slice(0, word.length)], ['rest', s.slice(word.length)]].forEach(([cls, txt]) => {
-        const span = document.createElement('span');
-        span.className = cls; span.textContent = txt; label.appendChild(span);
-      });
-      li.addEventListener('mouseenter', () => setActive(i));
-      li.addEventListener('mousedown', (e) => { e.preventDefault(); accept(i); });
+      li.className = 'suggestion'; li.setAttribute('role', 'option'); li.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+      const icon = document.createElement('span'); icon.className = 'suggestion-icon'; icon.innerHTML = searchIcon;
+      const label = document.createElement('span');
+      const hasHead = value.toLowerCase().startsWith(head.toLowerCase());
+      const visibleHead = hasHead ? value.slice(0, head.length) : '';
+      const tail = value.slice(visibleHead.length);
+      const first = document.createElement('span'); first.className = 'prefix'; first.textContent = visibleHead + tail.slice(0, word.length);
+      const rest = document.createElement('span'); rest.className = 'rest'; rest.textContent = tail.slice(word.length);
+      label.append(first, rest); li.append(icon, label);
+      li.addEventListener('mouseenter', () => setSuggestionActive(i));
+      li.addEventListener('mousedown', e => { e.preventDefault(); acceptSuggestion(i); });
       list.appendChild(li);
     });
-    dropdown.classList.remove('hidden'); tabHint.classList.remove('hidden');
-    input.setAttribute('aria-expanded', 'true');
-    setActive(0);
+    dropdown.hidden = false; tabHint.hidden = false; input.setAttribute('aria-expanded', 'true');
+    setSuggestionActive(0);
   }
-  function setActive(i) {
-    state.active = i;
-    [...list.children].forEach((li, idx) => li.classList.toggle('active', idx === i));
+  function setSuggestionActive(i) {
+    suggestionState.active = i;
+    [...list.children].forEach((li, idx) => { const on = idx === i; li.classList.toggle('active', on); li.setAttribute('aria-selected', String(on)); });
   }
-  function accept(i) {
-    const s = state.items[i];
-    if (s == null) return;
-    input.value = state.head + s + ' ';
-    hide(); input.focus();
+  function acceptSuggestion(i) {
+    const value = suggestionState.items[i];
+    if (value == null) return;
+    input.value = value + ' ';
+    hideSuggestions(); input.focus();
   }
   input.addEventListener('input', () => {
     const { head, word } = splitInput(input.value);
-    if (word === '') { hide(); return; }
+    const query = input.value.trim();
+    if (!query) { hideSuggestions(); return; }
     clearTimeout(debounceTimer);
-    const myId = ++requestId;
+    const id = ++requestId;
     debounceTimer = setTimeout(async () => {
       try {
-        const data = await api('/api/search?q=' + encodeURIComponent(word));
-        if (myId !== requestId) return;
-        const items = data.results || [];
-        if (items.length) render(head, word, items);
-        else { state = { head, items: [], active: 0 }; showMessage('No matches for "' + word + '"'); }
+        const requests = [];
+        if (word) requests.push(api('/api/search?q=' + encodeURIComponent(word)).then(d => (d.results || []).map(s => head + s)));
+        requests.push(api('/api/cities?q=' + encodeURIComponent(query)).then(d => d.results || []));
+        const groups = await Promise.all(requests);
+        if (id !== requestId) return;
+        const normal = groups.length > 1 ? groups[0] : [];
+        const cities = groups[groups.length - 1];
+        const items = [...new Set([...cities.slice(0, 3), ...normal.slice(0, 3), ...cities.slice(3), ...normal.slice(3)])].slice(0, 5);
+        if (items.length) renderSuggestions(head, word, items);
+        else {
+          list.innerHTML = ''; const li = document.createElement('li'); li.className = 'empty-state'; li.textContent = 'No matches for “' + query + '”'; list.append(li);
+          dropdown.hidden = false; tabHint.hidden = true; input.setAttribute('aria-expanded', 'true'); suggestionState = { items: [], active: 0 };
+        }
       } catch (err) {
-        if (myId === requestId) showMessage(err.message);
+        if (id === requestId) { list.innerHTML = ''; const li = document.createElement('li'); li.className = 'empty-state'; li.textContent = err.message; list.append(li); dropdown.hidden = false; tabHint.hidden = true; }
       }
     }, 100);
   });
-  input.addEventListener('keydown', (e) => {
-    const n = state.items.length;
-    if (!n) return;
-    if (e.key === 'ArrowDown') { e.preventDefault(); setActive((state.active + 1) % n); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((state.active - 1 + n) % n); }
-    else if (e.key === 'Tab' || e.key === 'Enter') { e.preventDefault(); accept(state.active); }
-    else if (e.key === 'Escape') hide();
+  input.addEventListener('keydown', e => {
+    const n = suggestionState.items.length;
+    if (!n) { if (e.key === 'Enter') { e.preventDefault(); runLab(); } return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setSuggestionActive((suggestionState.active + 1) % n); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setSuggestionActive((suggestionState.active - 1 + n) % n); }
+    else if (e.key === 'Tab' || e.key === 'Enter') { e.preventDefault(); acceptSuggestion(suggestionState.active); }
+    else if (e.key === 'Escape') hideSuggestions();
   });
-  $('clearBtn').addEventListener('click', () => { input.value = ''; hide(); input.focus(); });
+  $('clearBtn').addEventListener('click', () => { input.value = ''; hideSuggestions(); input.focus(); });
+  document.addEventListener('click', e => { if (!e.target.closest('.search-card')) hideSuggestions(); });
 
-  /* ---------- benchmark ---------- */
-  const fmt = (us) => us >= 1000 ? (us / 1000).toFixed(2) + ' ms' : us.toFixed(1) + ' µs';
-  const bar = (label, v, max, color) => `
-    <div><div class="flex justify-between text-sm mb-1"><span>${label}</span><span>${fmt(v)}</span></div>
-    <div class="h-3 rounded-full bg-slate-800"><div class="h-3 rounded-full bg-gradient-to-r ${color}" style="width:${Math.max(2, v / max * 100)}%"></div></div></div>`;
-  const stat = (k, v) => `<div class="stat"><div class="text-xs text-slate-400">${k}</div><div class="text-lg text-white mt-1">${v}</div></div>`;
-  async function runBench() {
-    const q = $('benchInput').value.trim();
-    if (!q) return;
-    $('benchOut').textContent = 'Running...';
-    try {
-      const d = await api('/api/benchmark?q=' + encodeURIComponent(q));
-      const max = Math.max(d.trie_us, d.scan_us);
-      $('benchOut').innerHTML = `
-        <div class="space-y-4">
-          ${bar('Trie (walk prefix, then DFS)', d.trie_us, max, 'from-sky-400 to-indigo-400')}
-          ${bar('Linear scan (check every word)', d.scan_us, max, 'from-slate-500 to-slate-400')}
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
-          ${stat('Speedup', d.speedup + '×')}
-          ${stat('Trie nodes touched', d.trie_nodes.toLocaleString())}
-          ${stat('Scan words checked', d.scan_checked.toLocaleString())}
-          ${stat('Matches for prefix', d.matches.toLocaleString())}
-        </div>`;
-    } catch (e) { $('benchOut').textContent = e.message; }
+  const tabs = [...document.querySelectorAll('.lab-tab')];
+  tabs.forEach(tab => tab.addEventListener('click', () => selectMode(tab.dataset.tab)));
+  function selectMode(mode) {
+    stopPlaying(); activeMode = mode; currentStep = 0;
+    tabs.forEach(tab => { const selected = tab.dataset.tab === mode; tab.setAttribute('aria-selected', String(selected)); });
+    document.querySelectorAll('.panel').forEach(panel => { panel.hidden = panel.id !== 'panel-' + mode; });
+    updateControls(); if (labData) renderMode();
   }
-  $('benchBtn').addEventListener('click', runBench);
-  $('benchInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') runBench(); });
-
-  /* ---------- words manager ---------- */
-  function showStats(d) { $('wordStats').textContent = d.words.toLocaleString() + ' words · ' + d.nodes.toLocaleString() + ' trie nodes'; }
-  async function loadStats() { try { showStats(await api('/api/stats')); } catch (e) { $('wordStats').textContent = e.message; } }
-  function wordMsg(text, ok) { const m = $('wordMsg'); m.textContent = text; m.className = 'mt-5 min-h-[1.5rem] ' + (ok ? 'text-emerald-300' : 'text-red-300'); }
-  async function wordAction(method) {
-    const w = $('wordInput').value.trim().toLowerCase();
-    if (!w) return;
+  function getLabPrefix() { return (input.value.trim().split(/\s+/).pop() || '').toLowerCase(); }
+  async function runLab() {
+    const prefix = getLabPrefix();
+    if (!/^[a-z]{1,40}$/.test(prefix)) {
+      showExplain('trieExplain', 'Enter a one-word prefix using letters a–z, then visualize it. City phrase suggestions remain available in the search box.');
+      return;
+    }
+    stopPlaying(); $('runLabBtn').disabled = true; $('runLabBtn').textContent = 'Loading…';
     try {
-      const d = method === 'POST'
-        ? await api('/api/words', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ word: w }) })
-        : await api('/api/words?word=' + encodeURIComponent(w), { method });
-      wordMsg((method === 'POST' ? 'Added "' : 'Deleted "') + w + '"', true);
-      showStats(d); $('wordInput').value = '';
-    } catch (e) { wordMsg(e.message, false); }
+      const [data, tree] = await Promise.all([
+        api('/api/lab?q=' + encodeURIComponent(prefix)),
+        api('/api/tree?q=' + encodeURIComponent(prefix) + '&depth=2')
+      ]);
+      labData = data; treeData = tree; currentStep = 0;
+      $('prefixLabel').innerHTML = 'Prefix: <strong>' + escapeHtml(prefix) + '</strong>';
+      renderMode(); updateControls();
+    } catch (err) { showExplain(activeMode === 'compare' ? 'compareExplain' : activeMode === 'topk' ? 'topkExplain' : 'trieExplain', err.message); }
+    finally { $('runLabBtn').disabled = false; $('runLabBtn').innerHTML = 'Visualize prefix <span aria-hidden="true">→</span>'; }
   }
-  $('addBtn').addEventListener('click', () => wordAction('POST'));
-  $('delBtn').addEventListener('click', () => wordAction('DELETE'));
-  $('wordInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') wordAction('POST'); });
-
-  /* ---------- trie visualizer ---------- */
-  let vizTimer, vizId = 0;
-  const chip = (ch, end) => { const s = document.createElement('span'); s.className = 'chip' + (end ? ' end' : ''); s.textContent = ch; return s; };
-  const note = (cls, text) => { const d = document.createElement('div'); d.className = cls; d.textContent = text; return d; };
-  function kidsList(node, acc) {
-    const ul = document.createElement('ul');
-    node.kids.forEach(k => {
-      const li = document.createElement('li');
-      li.append(chip(k.ch, k.end));
-      if (k.end) { const w = document.createElement('span'); w.className = 'word'; w.textContent = acc + k.ch; li.append(w); }
-      if (k.kids.length) li.append(kidsList(k, acc + k.ch));
-      if (k.more) li.append(note('more', '+' + k.more + ' more'));
-      ul.append(li);
+  $('runLabBtn').addEventListener('click', runLab);
+  function showExplain(id, text) { const el = $(id); el.replaceChildren(); const mark = document.createElement('span'); mark.className = 'explain-mark'; mark.textContent = 'i'; const msg = document.createElement('span'); msg.textContent = text; el.append(mark, msg); }
+  function escapeHtml(value) { return value.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+  function stepLimit() {
+    if (!labData) return 0;
+    if (activeMode === 'trie') return Math.max(1, labData.trie.path.length - 1);
+    if (activeMode === 'compare') return Math.max(labData.trie.path.length - 1, labData.scan.sample.length, 1) + 1;
+    return labData.trie.trace.length + 1;
+  }
+  function updateControls() {
+    const ready = Boolean(labData); const max = stepLimit();
+    $('resetStep').disabled = !ready || currentStep === 0;
+    $('prevStep').disabled = !ready || currentStep === 0;
+    $('nextStep').disabled = !ready || currentStep >= max;
+    $('playStep').disabled = !ready || currentStep >= max;
+    $('stepCount').textContent = !ready ? 'Enter a prefix to begin' : currentStep >= max ? 'Walkthrough complete' : 'Step ' + currentStep + ' of ' + max;
+  }
+  function showStep(delta) {
+    if (!labData) return;
+    currentStep = Math.max(0, Math.min(stepLimit(), currentStep + delta));
+    renderMode(); updateControls();
+  }
+  $('resetStep').addEventListener('click', () => { stopPlaying(); currentStep = 0; renderMode(); updateControls(); });
+  $('prevStep').addEventListener('click', () => showStep(-1));
+  $('nextStep').addEventListener('click', () => showStep(1));
+  $('playStep').addEventListener('click', () => {
+    if (playTimer) { stopPlaying(); return; }
+    if (currentStep >= stepLimit()) currentStep = 0;
+    $('playStep').textContent = 'Pause'; renderMode(); updateControls();
+    playTimer = setInterval(() => { if (currentStep >= stepLimit()) { stopPlaying(); return; } showStep(1); }, 750);
+  });
+  function stopPlaying() { if (playTimer) clearInterval(playTimer); playTimer = null; $('playStep').textContent = 'Play'; }
+  function renderMode() { if (!labData) return; if (activeMode === 'trie') renderTrie(); else if (activeMode === 'compare') renderCompare(); else renderTopK(); }
+  const svgEl = (tag, attrs = {}) => { const el = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v); return el; };
+  function svgText(svg, x, y, text, attrs = {}) { const t = svgEl('text', {x,y,fill:'#64736a','font-size':'12','text-anchor':'middle','dominant-baseline':'middle',...attrs}); t.textContent = text; svg.append(t); return t; }
+  function renderTrie() {
+    const svg = $('trieGraph'); svg.replaceChildren();
+    const path = labData.trie.path || []; const complete = currentStep >= path.length - 1;
+    const children = treeData && treeData.found && complete ? (treeData.tree.kids || []).slice(0, 9) : [];
+    const prefix = labData.prefix; const pathGap = 66; const startX = 54; const pathEndX = startX + Math.max(0,path.length - 1) * pathGap;
+    const branchWidth = Math.max(300, children.length * 62);
+    const width = Math.max(700, pathEndX + branchWidth/2 + 85, branchWidth + 90); svg.setAttribute('viewBox', `0 0 ${width} 270`);
+    const nodeX = i => startX + i * pathGap;
+    for (let i=1;i<path.length;i++) svg.append(svgEl('line',{x1:nodeX(i-1)+17,y1:94,x2:nodeX(i)-17,y2:94,stroke:i<=currentStep?'#86a98a':'#425348','stroke-width':'2'}));
+    path.forEach((node,i) => {
+      const reached = i <= currentStep; const active = i === currentStep;
+      const g = svgEl('g'); const c = svgEl('circle',{cx:nodeX(i),cy:94,r:i===0?20:19,fill:active?'#453728':reached?'#2d4032':'#202d25',stroke:active?'#d3a16b':reached?'#7da181':'#435349','stroke-width':active?'2.5':'1.6'}); g.append(c);
+      svgText(g,nodeX(i),94,i===0?'⌂':node.ch,{fill:active?'#f0c992':reached?'#c6dec4':'#9ca99f','font-size':i===0?'13':'14','font-weight':'600'});
+      svgText(g,nodeX(i),130,node.end?'word':'node',{fill:node.end?'#a9cbaa':'#91a096','font-size':'9'}); svg.append(g);
     });
-    return ul;
+    if (complete && children.length) {
+      const center = Math.max(pathEndX + 45, branchWidth/2 + 35); const step = Math.min(66,branchWidth/Math.max(children.length,1));
+      children.forEach((child,i) => {
+        const x = center + (i-(children.length-1)/2)*step; svg.append(svgEl('line',{x1:pathEndX,y1:116,x2:x,y2:193,stroke:'#46584b','stroke-width':'1.5'}));
+        const g=svgEl('g'); g.append(svgEl('circle',{cx:x,cy:203,r:17,fill:child.end?'#2d4433':'#233128',stroke:child.end?'#82a684':'#46584b','stroke-width':child.end?'2':'1.4'}));
+        svgText(g,x,203,child.ch,{fill:'#c3d9c1','font-size':'12','font-weight':'600'}); if(child.end)svgText(g,x,235,'word',{fill:'#a9cbaa','font-size':'9'}); svg.append(g);
+      });
+      if(treeData.tree.more) svgText(svg,width-38,204,'+'+treeData.tree.more,{fill:'#a0ada2','font-size':'10'});
+    } else if (complete) svgText(svg,pathEndX+92,203,'No next branches',{fill:'#a4b0a6','font-size':'11'});
+    else svgText(svg,Math.max(340,pathEndX+88),203,'Step through the prefix to reveal its branches',{fill:'#a4b0a6','font-size':'11'});
+    $('trieMetricChars').textContent = String(prefix.length);
+    $('trieMetricNodes').textContent = complete ? labData.trie.visited.toLocaleString() : Math.min(currentStep+1,path.length).toLocaleString();
+    $('trieMetricMatches').textContent = complete ? labData.trie.candidate_count.toLocaleString() : '—';
+    if (!labData.trie.found) showExplain('trieExplain','No trie path starts with “'+prefix+'”. Try another prefix.');
+    else if (complete) showExplain('trieExplain','The trie reached “'+prefix+'”. Its matching subtree contains '+labData.trie.candidate_count.toLocaleString()+' words; collecting candidates visits '+labData.trie.visited.toLocaleString()+' nodes in total.');
+    else showExplain('trieExplain','Step '+currentStep+': '+(currentStep===0?'begin at the root node.':'follow the “'+prefix.slice(0,currentStep)+'” prefix path to its next character node.'));
   }
-  function loadTree() {
-    clearTimeout(vizTimer);
-    vizTimer = setTimeout(async () => {
-      const q = $('vizInput').value.trim().toLowerCase();
-      const id = ++vizId;
-      const path = $('vizPath'), tree = $('vizTree');
-      try {
-        const d = await api('/api/tree?q=' + encodeURIComponent(q) + '&depth=' + (q ? 3 : 2));
-        if (id !== vizId) return;
-        path.innerHTML = ''; tree.innerHTML = '';
-        if (!d.found) { tree.append(note('msg', 'No path in the trie for this prefix.')); return; }
-        d.path.forEach((p, i) => { if (i) path.append(note('text-slate-500', '→')); path.append(chip(p.ch, p.end)); });
-        if (d.tree.kids.length) tree.append(kidsList(d.tree, q));
-        else tree.append(note('msg', 'Leaf node: nothing below this prefix.'));
-        if (d.tree.more) tree.append(note('more', '+' + d.tree.more + ' more branches not shown'));
-      } catch (e) { tree.innerHTML = ''; tree.append(note('msg', e.message)); }
-    }, 120);
+  function renderCompare() {
+    const path = labData.trie.path || []; const prefixNodes = path.slice(1); const sample = labData.scan.sample || [];
+    const trieShown = Math.min(currentStep,prefixNodes.length); const scanShown = Math.min(currentStep,sample.length);
+    const trie = $('compareTrie'); trie.replaceChildren();
+    const root = document.createElement('span'); root.className = 'sequence-node visited'; root.textContent = 'root'; trie.append(root);
+    prefixNodes.forEach((node,i) => { const arrow=document.createElement('span');arrow.className='sequence-arrow';arrow.textContent='→';trie.append(arrow);const el=document.createElement('span');el.className='sequence-node'+(i<trieShown?' visited':'')+(i===trieShown-1&&trieShown>0?' current':'');el.textContent=node.ch;trie.append(el); });
+    const scan = $('compareScan'); scan.replaceChildren();
+    sample.forEach((item,i) => { const el=document.createElement('span');el.className='scan-word'+(i<scanShown?' checked':'')+(item.matches?' match':'');el.textContent=item.word;el.title=item.matches?'Matches this prefix':'Does not match this prefix';scan.append(el); });
+    if(labData.scan.checked>sample.length){const more=document.createElement('span');more.className='scan-more';more.textContent='+'+(labData.scan.checked-sample.length).toLocaleString()+' more';scan.append(more);}
+    const done = currentStep >= stepLimit();
+    $('compareTrieResult').textContent = done ? 'Followed '+prefixNodes.length+' prefix edges, then explored matching branches. '+labData.trie.visited.toLocaleString()+' trie nodes visited.' : trieShown+' of '+prefixNodes.length+' prefix edges followed.';
+    $('compareScanResult').textContent = done ? 'Checked '+labData.scan.checked.toLocaleString()+' dictionary words; '+labData.scan.matches.toLocaleString()+' began with this prefix.' : scanShown+' sample entries highlighted; the full scan checks '+labData.scan.checked.toLocaleString()+' words.';
+    if(!labData.trie.found) showExplain('compareExplain','The trie found no path for this prefix; the linear scan still checks every dictionary word.');
+    else if(done) showExplain('compareExplain','Finished: the trie follows the prefix path and explores its matching subtree, while the scan examines all '+labData.scan.checked.toLocaleString()+' words. The chips show its first '+sample.length+' checks; the rest are summarized.');
+    else showExplain('compareExplain','Both lanes move together: '+(trieShown?trieShown+' trie edge'+(trieShown===1?'':'s')+' followed':'the trie is at its root')+' and '+scanShown+' initial scan check'+(scanShown===1?'':'s')+' revealed.');
   }
-  $('vizInput').addEventListener('input', loadTree);
+  function renderHeap(svg, items) {
+    svg.replaceChildren();
+    const points=[{x:240,y:54},{x:150,y:132},{x:330,y:132},{x:105,y:204},{x:195,y:204}];
+    for(let i=1;i<items.length;i++){const parent=Math.floor((i-1)/2),a=points[parent],b=points[i];svg.append(svgEl('line',{x1:a.x,y1:a.y+22,x2:b.x,y2:b.y-21,stroke:'#46584b','stroke-width':'2'}));}
+    items.forEach((item,i)=>{const p=points[i],g=svgEl('g'),fontSize=Math.min(12,Math.max(7,90/item.word.length));g.append(svgEl('rect',{x:p.x-51,y:p.y-20,width:102,height:40,rx:11,fill:i===0?'#453728':'#2d4032',stroke:i===0?'#d3a16b':'#7da181','stroke-width':i===0?'2':'1.4'}));svgText(g,p.x,p.y-2,item.word,{fill:i===0?'#f0c992':'#c6dec4','font-size':String(fontSize),'font-weight':'600'});svgText(g,p.x,p.y+12,Number(item.frequency).toLocaleString(),{fill:'#a4b0a6','font-size':'8'});svg.append(g);});
+    if(!items.length)svgText(svg,240,120,'Heap is empty',{fill:'#a4b0a6','font-size':'12'});
+  }
+  function renderTopK() {
+    const data=labData.trie,trace=data.trace||[],limit=stepLimit(),final=currentStep>=limit;
+    let snapshot=[],entry=null,action='The min-heap will hold up to five candidates.',position='Ready';
+    if(currentStep>0&&currentStep<=trace.length){entry=trace[currentStep-1];snapshot=entry.heap;position='Candidate '+currentStep+' of '+data.candidate_count;action=entry.action==='replaced'?'Replaced “'+entry.dropped+'” with “'+entry.candidate+'”; the old root was weaker.':entry.action==='discarded'?'Discarded “'+entry.candidate+'”; it did not beat the current top five.':'Kept “'+entry.candidate+'” in the heap.';}
+    else if(final){snapshot=data.final_heap||[];position='Final heap';action=data.trace_remaining?data.trace_remaining.toLocaleString()+' later matches were processed to finish the heap.':'All matching candidates have been processed.';}
+    $('heapPosition').textContent=position; $('candidateWord').textContent=entry?entry.candidate:final?'—':'—'; $('candidateAction').textContent=action;
+    renderHeap($('heapGraph'),snapshot);
+    const ranked=$('rankedList');ranked.replaceChildren();
+    if(final&&data.results.length){data.results.forEach((word,i)=>{const li=document.createElement('li'),num=document.createElement('span'),label=document.createElement('span');num.className='rank-num';num.textContent=String(i+1);label.textContent=word;li.append(num,label);ranked.append(li);});}
+    else {const li=document.createElement('li');li.className='ranked-empty';li.textContent=final?'No words match this prefix.':'Final suggestions appear after the candidates are processed.';ranked.append(li);}
+    $('topkSummary').textContent=final?'The heap is organized by priority; the result list is sorted by frequency, then alphabetically. '+data.candidate_count.toLocaleString()+' candidates considered.':'This heap contains '+snapshot.length+' of 5 slots. Its root is the weakest retained candidate.';
+    if(!data.found)showExplain('topkExplain','No trie path matches “'+labData.prefix+'”, so there are no candidates to add.');
+    else if(final)showExplain('topkExplain','Complete: the best five of '+data.candidate_count.toLocaleString()+' matching words are ranked at the right. The min-heap made it possible to keep only five candidates while processing the full set.');
+    else if(entry)showExplain('topkExplain','Candidate '+currentStep+': “'+entry.candidate+'” has frequency '+Number(entry.frequency).toLocaleString()+'. '+action);
+    else showExplain('topkExplain','Start with an empty heap. Each matching word is compared with the weakest of the best five seen so far.');
+  }
+
+  function showStats(data) { $('wordStats').textContent=data.words.toLocaleString()+' words · '+data.nodes.toLocaleString()+' trie nodes'; }
+  async function loadStats(){try{showStats(await api('/api/stats'));}catch(e){$('wordStats').textContent=e.message;}}
+  $('wordManager').addEventListener('toggle',()=>{if($('wordManager').open)loadStats();});
+  function wordMessage(text,ok){$('wordMsg').textContent=text;$('wordMsg').style.color=ok?'#a8caa8':'#e39a8d';}
+  async function wordAction(method){const word=$('wordInput').value.trim().toLowerCase();if(!word)return;try{const d=method==='POST'?await api('/api/words',{method,headers:{'Content-Type':'application/json'},body:JSON.stringify({word})}):await api('/api/words?word='+encodeURIComponent(word),{method});wordMessage((method==='POST'?'Added “':'Deleted “')+word+'”',true);showStats(d);$('wordInput').value='';}catch(e){wordMessage(e.message,false);}}
+  $('addBtn').addEventListener('click',()=>wordAction('POST'));
+  $('delBtn').addEventListener('click',()=>wordAction('DELETE'));
+  $('wordInput').addEventListener('keydown',e=>{if(e.key==='Enter')wordAction('POST');});
+  api('/api/stats').catch(() => {});
 </script>
 </body>
 </html>

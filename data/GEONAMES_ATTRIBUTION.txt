@@ -1,0 +1,4 @@
+City names in words.txt include primary ASCII names from the GeoNames cities500 worldwide extract.
+Source: https://download.geonames.org/export/dump/cities500.zip
+GeoNames data is licensed under the Creative Commons Attribution 4.0 License (CC BY 4.0): https://creativecommons.org/licenses/by/4.0/
+The cities500 extract includes places with a population greater than 500 or administrative seats down to PPLA4. GeoNames provides the data as-is and does not warrant completeness or accuracy.

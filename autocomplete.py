@@ -4,6 +4,7 @@ Run:   python server.py        (Python 3.8+, no packages to install)
 Needs: data/words.txt next to this file.
 API:
   GET    /api/search?q=app        top 5 suggestions for a prefix
+  GET    /api/cities?q=new%20y    top 5 city-name matches for a phrase
   GET    /api/benchmark?q=app     trie vs linear scan timing for a prefix
   GET    /api/stats               word and node counts
   GET    /api/tree?q=app&depth=3  subtree under a prefix (for the visualizer)
@@ -113,6 +114,55 @@ class Trie:
         heap.sort(key=lambda it: (-it.freq, it.word))   # best first
         return [it.word for it in heap]
 
+    def suggest_trace(self, prefix, k=TOP_K, limit=18):
+        """Return a bounded heap-operation trace plus the final top-k result."""
+        prefix = prefix.lower()
+        node, visited = self.root, 1
+        path = [{"ch": "root", "end": node.is_word, "children": len(node.kids)}]
+        for ch in prefix:
+            node = node.kids.get(ch)
+            if node is None:
+                return {"found": False, "path": path, "trace": [], "results": [],
+                        "candidate_count": 0, "visited": visited, "final_heap": []}
+            visited += 1
+            path.append({"ch": ch, "end": node.is_word, "children": len(node.kids)})
+
+        heap, stack, trace = [], [(node, prefix)], []
+        candidate_count = 0
+        while stack:
+            cur, word = stack.pop()
+            if cur.is_word:
+                candidate_count += 1
+                item = Item(word, cur.freq)
+                heapq.heappush(heap, item)
+                dropped, action = None, "kept"
+                if len(heap) > k:
+                    dropped = heapq.heappop(heap)
+                    action = "discarded" if dropped is item else "replaced"
+                if len(trace) < limit:
+                    trace.append({
+                        "candidate": word,
+                        "frequency": item.freq,
+                        "action": action,
+                        "dropped": dropped.word if dropped else None,
+                        "heap": [{"word": it.word, "frequency": it.freq} for it in heap],
+                    })
+            for ch, child in cur.kids.items():
+                visited += 1
+                stack.append((child, word + ch))
+
+        best = sorted(heap, key=lambda it: (-it.freq, it.word))
+        return {
+            "found": True,
+            "path": path,
+            "trace": trace,
+            "candidate_count": candidate_count,
+            "trace_remaining": max(0, candidate_count - len(trace)),
+            "visited": visited,
+            "final_heap": [{"word": it.word, "frequency": it.freq} for it in heap],
+            "results": [it.word for it in best],
+        }
+
     def subtree(self, prefix, depth, budget=150):
         """Path root->prefix plus the nodes below it, `depth` levels deep, capped at `budget` nodes."""
         node, path = self.root, [{"ch": "root", "end": False}]
@@ -140,6 +190,8 @@ class Trie:
 
 
 trie = Trie()
+city_trie = Trie()
+CITIES = set()
 
 
 def add_word(word, freq):
@@ -154,12 +206,31 @@ def remove_word(word):
     return trie.delete(word)
 
 
+def total_word_count():
+    return len(FREQ) + len(CITIES)
+
+
+def total_node_count():
+    return trie.nodes + city_trie.nodes - 1
+
+
 def scan(prefix, k=TOP_K):
     """Baseline: check every word in the dictionary."""
     prefix = prefix.lower()
     found = [(w, f) for w, f in FREQ.items() if w.startswith(prefix)]
     best = heapq.nsmallest(k, found, key=lambda x: (-x[1], x[0]))
     return [w for w, _ in best], len(found)
+
+
+def scan_preview(prefix, limit=8):
+    """A small sample of the first dictionary entries a linear scan examines."""
+    prefix = prefix.lower()
+    sample = []
+    for index, word in enumerate(FREQ):
+        if index >= limit:
+            break
+        sample.append({"word": word, "matches": word.startswith(prefix)})
+    return sample
 
 
 def benchmark(prefix, reps=20):
@@ -179,11 +250,16 @@ def benchmark(prefix, reps=20):
 
 def load_words(path):
     with open(path, encoding="utf-8") as f:
-        words = [line.split()[0] for line in f if line.strip()]
+        entries = [line.strip().lower() for line in f if line.strip()]
+    words = [entry for entry in entries if " " not in entry]
+    cities = [entry for entry in entries if " " in entry]
     n = len(words)
     for i, w in enumerate(words):               # earlier in the file = more common = higher frequency
         add_word(w, n - i)
-    return n
+    for city in cities:
+        CITIES.add(city)
+        city_trie.insert(city)
+    return n + len(cities)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -218,12 +294,25 @@ class Handler(BaseHTTPRequestHandler):
         with LOCK:
             if url.path == "/api/search":
                 return self._send(200, {"results": trie.suggest(q) if q else []})
+            if url.path == "/api/cities":
+                return self._send(200, {"results": city_trie.suggest(q) if q else []})
+            if url.path == "/api/lab":
+                if not q:
+                    return self._send(400, {"error": "Enter a prefix first."})
+                trace = trie.suggest_trace(q)
+                results, matches = scan(q)
+                return self._send(200, {
+                    "prefix": q,
+                    "trie": trace,
+                    "scan": {"checked": len(FREQ), "matches": matches,
+                             "sample": scan_preview(q), "results": results},
+                })
             if url.path == "/api/benchmark":
                 if not q:
                     return self._send(400, {"error": "Enter a prefix first."})
                 return self._send(200, benchmark(q))
             if url.path == "/api/stats":
-                return self._send(200, {"words": len(FREQ), "nodes": trie.nodes})
+                return self._send(200, {"words": total_word_count(), "nodes": total_node_count()})
             if url.path == "/api/tree":
                 try:
                     depth = max(1, min(4, int(qs.get("depth", ["3"])[0])))
@@ -245,7 +334,7 @@ class Handler(BaseHTTPRequestHandler):
             if word in FREQ:
                 return self._send(409, {"error": "'%s' is already in the trie." % word})
             add_word(word, max(FREQ.values(), default=0) + 1)   # top frequency, so it ranks first
-            self._send(200, {"ok": True, "words": len(FREQ), "nodes": trie.nodes})
+            self._send(200, {"ok": True, "words": total_word_count(), "nodes": total_node_count()})
 
     def do_DELETE(self):
         url = urlparse(self.path)
@@ -256,7 +345,7 @@ class Handler(BaseHTTPRequestHandler):
             if word not in FREQ:
                 return self._send(404, {"error": "'%s' is not in the trie." % word})
             remove_word(word)
-            self._send(200, {"ok": True, "words": len(FREQ), "nodes": trie.nodes})
+            self._send(200, {"ok": True, "words": total_word_count(), "nodes": total_node_count()})
 
     def log_message(self, fmt, *args):
         print("%s  %s" % (self.address_string(), fmt % args))
