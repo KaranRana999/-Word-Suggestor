@@ -70,6 +70,28 @@
   .panel-copy { margin:5px 0 14px;color:#879188;font-size:.72rem;line-height:1.6; }
   .diagram-card { overflow:auto;border:1px solid #e8ece5;border-radius:15px;background:linear-gradient(180deg,#fffefa,#fbfcf8); }
   .diagram-card svg { display:block;min-width:640px;width:100%;height:270px; }
+  .trie-edge { fill:none;stroke:#9aa99c;stroke-width:1.5; }
+  .trie-trace { fill:none;stroke:#6f9875;stroke-width:2;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 360ms ease-out; }
+  .trie-trace.drawn { stroke-dashoffset:0; }
+  .trie-node { opacity:.5; }
+  .trie-node.active { opacity:1; }
+  .trie-disc { fill:#f4f7f1;stroke:#9da99e;stroke-width:1.4;transition:fill 260ms,stroke 260ms,stroke-width 260ms; }
+  .trie-node.visited .trie-disc { fill:#e5efe4;stroke:#6f9875; }
+  .trie-node.current .trie-disc { fill:#f8efe4;stroke:#bc8650;stroke-width:2.2; }
+  .trie-glyph { fill:#34483a;text-anchor:middle;dominant-baseline:central;font-size:14px;font-weight:600; }
+  .trie-label { fill:#849187;font-size:9px;text-anchor:middle; }
+  .trie-halo { fill:none;stroke:#bc8650;stroke-width:7;opacity:0; }
+  .trie-node.current .trie-halo { animation:trie-pulse 2s ease-in-out infinite; }
+  .trie-node.entering .trie-body { animation:trie-arrive 300ms ease-out both; }
+  .trie-branch { opacity:0;transform:translate(var(--dx),var(--dy)) scale(.8);transform-box:fill-box;transform-origin:center;transition:opacity 220ms ease-out,transform 300ms ease-out;transition-delay:var(--delay); }
+  .trie-branch.revealed { opacity:1;transform:translate(0,0) scale(1); }
+  .trie-branch .trie-trace { transition-delay:var(--delay); }
+  .trie-branch:not(.revealed) { transition-delay:0ms; }
+  .trie-branch.revealed.word .trie-disc { animation:trie-word-flash 650ms ease-out both;animation-delay:var(--delay); }
+  @keyframes trie-arrive { from{opacity:0;transform:scale(.8)} to{opacity:1;transform:scale(1)} }
+  @keyframes trie-pulse { 0%,100%{opacity:.03} 50%{opacity:.16} }
+  @keyframes trie-word-flash { 0%,100%{fill:#e5efe4} 40%{fill:#d8e7ca;stroke:#8aa865} }
+  @media(prefers-reduced-motion:reduce) { .trie-node.current .trie-halo,.trie-node.entering .trie-body,.trie-branch.revealed.word .trie-disc{animation:none!important}.trie-trace,.trie-disc,.trie-branch{transition:none!important} }
   .diagram-legend { display:flex;gap:15px;flex-wrap:wrap;margin:12px 0;color:#7d887f;font-size:.67rem; }
   .legend-item { display:flex;align-items:center;gap:6px; }
   .legend-dot { width:9px;height:9px;border-radius:50%;background:#e9f1e9;border:1px solid #9bb39d; }
@@ -91,11 +113,15 @@
   .sequence-node,.scan-word { display:grid;place-items:center;min-width:32px;height:32px;padding:0 8px;border:1px solid #e3e9e2;border-radius:9px;background:#f9faf7;color:#89938a;font-size:.75rem;transition:all .2s; }
   .sequence-node.visited { border-color:#9bb69e;background:#ecf4ec;color:#3f6748; }
   .sequence-node.current { border-color:#ce965e;background:#fbf2e8;color:#8a5c2f;box-shadow:0 0 0 3px rgba(188,134,80,.1); }
-  .sequence-arrow { color:#a2aca3;font-size:.7rem; }
+  .sequence-arrow { color:#a2aca3;font-size:.7rem;transition:color .25s,transform .25s; }
+  .sequence-arrow.followed { color:#6f9875;transform:translateX(2px); }
   .scan-sample { display:flex;gap:5px;flex-wrap:wrap;min-height:72px;align-content:flex-start; }
   .scan-word { max-width:100%;height:27px;font-size:.64rem; }
   .scan-word.checked { background:#f8f0e7;border-color:#e1c6a8;color:#865f37; }
   .scan-word.match { background:#edf5ec;border-color:#a6c2a5;color:#426a49; }
+  .sequence-node.just-followed { animation:compare-current 460ms ease-out both; }
+  .scan-word.just-checked { animation:scan-check 380ms cubic-bezier(.2,.8,.2,1) both; }
+  .scan-word.just-unchecked { animation:scan-uncheck 260ms ease-in both; }
   .scan-more { align-self:center;color:#939c93;font-size:.64rem; }
   .algorithm-result { margin-top:12px;padding-top:11px;border-top:1px solid #eef1ec;color:#77837a;font-size:.67rem;line-height:1.55; }
   .heap-layout { display:grid;grid-template-columns:minmax(0,1.3fr) minmax(240px,.7fr);gap:14px; }
@@ -111,8 +137,25 @@
   .ranked-card h3 { margin-bottom:11px; }
   .ranked-list { display:flex;flex-direction:column;gap:7px;margin:0;padding:0;list-style:none; }
   .ranked-list li { display:flex;align-items:center;gap:9px;padding:8px 9px;border:1px solid #edf0eb;border-radius:9px;background:#fbfcf9;color:#526157;font-size:.7rem; }
+  .ranked-list li.rank-enter { animation:rank-enter 420ms cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--rank-delay,0ms); }
   .rank-num { display:grid;place-items:center;width:21px;height:21px;border-radius:7px;background:#edf3ec;color:#55745a;font-size:.61rem;font-weight:700; }
   .ranked-empty { color:#9aa39b;font-size:.68rem;line-height:1.55; }
+  .heap-node { transform-box:fill-box;transform-origin:center; }
+  .heap-node.heap-enter { animation:heap-enter 420ms cubic-bezier(.2,.8,.2,1) both; }
+  .heap-node.heap-settle { animation:heap-settle 320ms ease-out both;animation-delay:var(--heap-delay,0ms); }
+  .heap-node.heap-root-change { animation:heap-root-change 520ms ease-out both; }
+  .candidate-word.candidate-kept,.candidate-word.candidate-replaced { display:inline-block;animation:candidate-kept 460ms ease-out both; }
+  .candidate-word.candidate-rejected { display:inline-block;animation:candidate-rejected 440ms ease-in-out both; }
+  @keyframes compare-current { 0%{transform:translateY(5px) scale(.82);opacity:.35} 65%{transform:translateY(-2px) scale(1.08)} 100%{transform:translateY(0) scale(1);opacity:1} }
+  @keyframes scan-check { 0%{transform:translateY(8px) scale(.78);opacity:0} 70%{transform:translateY(-2px) scale(1.04);opacity:1} 100%{transform:none;opacity:1} }
+  @keyframes scan-uncheck { to{transform:scale(.88);opacity:.42} }
+  @keyframes heap-enter { 0%{opacity:0;transform:translateY(18px) scale(.68)} 70%{opacity:1;transform:translateY(-3px) scale(1.08)} 100%{opacity:1;transform:none} }
+  @keyframes heap-settle { 0%{transform:scale(.94)} 55%{transform:scale(1.035)} 100%{transform:scale(1)} }
+  @keyframes heap-root-change { 0%,100%{filter:none} 35%{filter:drop-shadow(0 0 8px #d3a16b);transform:scale(1.08)} }
+  @keyframes candidate-kept { 0%{transform:scale(.75);opacity:.3} 65%{transform:scale(1.12);opacity:1} 100%{transform:scale(1)} }
+  @keyframes candidate-rejected { 0%,100%{transform:translateX(0);opacity:1} 25%,75%{transform:translateX(5px);opacity:.65} 50%{transform:translateX(-5px);opacity:.8} }
+  @keyframes rank-enter { from{opacity:0;transform:translateX(14px)} to{opacity:1;transform:translateX(0)} }
+  @media(prefers-reduced-motion:reduce) { .sequence-node.just-followed,.scan-word.just-checked,.scan-word.just-unchecked,.ranked-list li.rank-enter,.heap-node.heap-enter,.heap-node.heap-settle,.heap-node.heap-root-change,.candidate-word.candidate-kept,.candidate-word.candidate-replaced,.candidate-word.candidate-rejected{animation:none!important} }
   .word-manager { margin-top:18px;padding:0 20px;box-shadow:0 10px 30px rgba(43,60,47,.035); }
   .word-manager summary { padding:17px 0;color:#56665b;font-size:.78rem;font-weight:600;cursor:pointer; }
   .word-manager-body { padding:0 0 18px; }
@@ -308,7 +351,7 @@
   const $ = id => document.getElementById(id);
   const input = $('searchInput'), dropdown = $('dropdown'), list = $('suggestionList'), tabHint = $('tabHint');
   const statusDot = $('statusDot'), statusText = $('statusText');
-  let debounceTimer, requestId = 0, labData = null, treeData = null, activeMode = 'trie', currentStep = 0, playTimer = null;
+  let debounceTimer, requestId = 0, labData = null, treeData = null, activeMode = 'trie', currentStep = 0, stepDirection = 1, playTimer = null;
   let suggestionState = { items: [], active: 0 };
 
   async function api(path, opts) {
@@ -409,7 +452,7 @@
   const tabs = [...document.querySelectorAll('.lab-tab')];
   tabs.forEach(tab => tab.addEventListener('click', () => selectMode(tab.dataset.tab)));
   function selectMode(mode) {
-    stopPlaying(); activeMode = mode; currentStep = 0;
+    stopPlaying(); activeMode = mode; currentStep = 0; stepDirection = 1;
     tabs.forEach(tab => { const selected = tab.dataset.tab === mode; tab.setAttribute('aria-selected', String(selected)); });
     document.querySelectorAll('.panel').forEach(panel => { panel.hidden = panel.id !== 'panel-' + mode; });
     updateControls(); if (labData) renderMode();
@@ -427,7 +470,7 @@
         api('/api/lab?q=' + encodeURIComponent(prefix)),
         api('/api/tree?q=' + encodeURIComponent(prefix) + '&depth=2')
       ]);
-      labData = data; treeData = tree; currentStep = 0;
+      labData = data; treeData = tree; currentStep = 0; stepDirection = 1;
       $('prefixLabel').innerHTML = 'Prefix: <strong>' + escapeHtml(prefix) + '</strong>';
       renderMode(); updateControls();
     } catch (err) { showExplain(activeMode === 'compare' ? 'compareExplain' : activeMode === 'topk' ? 'topkExplain' : 'trieExplain', err.message); }
@@ -452,10 +495,12 @@
   }
   function showStep(delta) {
     if (!labData) return;
+    const previous = currentStep;
     currentStep = Math.max(0, Math.min(stepLimit(), currentStep + delta));
+    stepDirection = currentStep >= previous ? 1 : -1;
     renderMode(); updateControls();
   }
-  $('resetStep').addEventListener('click', () => { stopPlaying(); currentStep = 0; renderMode(); updateControls(); });
+  $('resetStep').addEventListener('click', () => { stopPlaying(); stepDirection = -1; currentStep = 0; renderMode(); updateControls(); });
   $('prevStep').addEventListener('click', () => showStep(-1));
   $('nextStep').addEventListener('click', () => showStep(1));
   $('playStep').addEventListener('click', () => {
@@ -470,29 +515,66 @@
   function svgText(svg, x, y, text, attrs = {}) { const t = svgEl('text', {x,y,fill:'#64736a','font-size':'12','text-anchor':'middle','dominant-baseline':'middle',...attrs}); t.textContent = text; svg.append(t); return t; }
   function renderTrie() {
     const svg = $('trieGraph'); svg.replaceChildren();
-    const path = labData.trie.path || []; const complete = currentStep >= path.length - 1;
-    const children = treeData && treeData.found && complete ? (treeData.tree.kids || []).slice(0, 9) : [];
-    const prefix = labData.prefix; const pathGap = 66; const startX = 54; const pathEndX = startX + Math.max(0,path.length - 1) * pathGap;
-    const branchWidth = Math.max(300, children.length * 62);
-    const width = Math.max(700, pathEndX + branchWidth/2 + 85, branchWidth + 90); svg.setAttribute('viewBox', `0 0 ${width} 270`);
-    const nodeX = i => startX + i * pathGap;
-    for (let i=1;i<path.length;i++) svg.append(svgEl('line',{x1:nodeX(i-1)+17,y1:94,x2:nodeX(i)-17,y2:94,stroke:i<=currentStep?'#86a98a':'#425348','stroke-width':'2'}));
-    path.forEach((node,i) => {
-      const reached = i <= currentStep; const active = i === currentStep;
-      const g = svgEl('g'); const c = svgEl('circle',{cx:nodeX(i),cy:94,r:i===0?20:19,fill:active?'#453728':reached?'#2d4032':'#202d25',stroke:active?'#d3a16b':reached?'#7da181':'#435349','stroke-width':active?'2.5':'1.6'}); g.append(c);
-      svgText(g,nodeX(i),94,i===0?'⌂':node.ch,{fill:active?'#f0c992':reached?'#c6dec4':'#9ca99f','font-size':i===0?'13':'14','font-weight':'600'});
-      svgText(g,nodeX(i),130,node.end?'word':'node',{fill:node.end?'#a9cbaa':'#91a096','font-size':'9'}); svg.append(g);
-    });
-    if (complete && children.length) {
-      const center = Math.max(pathEndX + 45, branchWidth/2 + 35); const step = Math.min(66,branchWidth/Math.max(children.length,1));
-      children.forEach((child,i) => {
-        const x = center + (i-(children.length-1)/2)*step; svg.append(svgEl('line',{x1:pathEndX,y1:116,x2:x,y2:193,stroke:'#46584b','stroke-width':'1.5'}));
-        const g=svgEl('g'); g.append(svgEl('circle',{cx:x,cy:203,r:17,fill:child.end?'#2d4433':'#233128',stroke:child.end?'#82a684':'#46584b','stroke-width':child.end?'2':'1.4'}));
-        svgText(g,x,203,child.ch,{fill:'#c3d9c1','font-size':'12','font-weight':'600'}); if(child.end)svgText(g,x,235,'word',{fill:'#a9cbaa','font-size':'9'}); svg.append(g);
-      });
-      if(treeData.tree.more) svgText(svg,width-38,204,'+'+treeData.tree.more,{fill:'#a0ada2','font-size':'10'});
-    } else if (complete) svgText(svg,pathEndX+92,203,'No next branches',{fill:'#a4b0a6','font-size':'11'});
-    else svgText(svg,Math.max(340,pathEndX+88),203,'Step through the prefix to reveal its branches',{fill:'#a4b0a6','font-size':'11'});
+    // /api/tree supplies the actual root-to-prefix path and bounded completion subtree.
+    const path = treeData && treeData.path ? treeData.path : (labData.trie.path || []);
+    const complete = currentStep >= stepLimit();
+    const prefixNode = treeData && treeData.found ? treeData.tree : null;
+    const children = complete && prefixNode ? (prefixNode.kids || []).slice(0, 6) : [];
+    const prefix = labData.prefix; const pathGap = 66; const startX = 54; const baseline = 112;
+    const pathEndX = startX + Math.max(0,path.length - 1) * pathGap;
+    const branchGap = 100;
+    const leafCount = items => (items || []).slice(0, 6).reduce((sum,item) => sum + Math.max(1,(item.kids || []).slice(0,6).length),0);
+    const visibleLeaves = Math.max(1,leafCount(children));
+    const rowGap = Math.max(10,Math.min(24,330 / visibleLeaves));
+    const height = Math.max(270,Math.min(470,visibleLeaves * rowGap + 110));
+    const top = (height - visibleLeaves * rowGap) / 2 + rowGap / 2;
+    const width = Math.max(700,pathEndX + (children.length ? branchGap * 2 + 90 : 160));
+    svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
+    svg.style.width=`${width}px`;svg.style.height=`${height}px`;
+    function drawNode(x,y,ch,isWord,classes='') {
+      const group=svgEl('g',{transform:`translate(${x} ${y})`,class:'trie-node '+classes});
+      const body=svgEl('g',{class:'trie-body'});
+      body.append(svgEl('circle',{r:20,class:'trie-halo'}));
+      body.append(svgEl('circle',{r:18,class:'trie-disc'}));
+      const glyph=svgEl('text',{y:-1,class:'trie-glyph'});glyph.textContent=ch;body.append(glyph);
+      const label=svgEl('text',{y:34,class:'trie-label'});label.textContent=isWord?'word':'node';body.append(label);
+      group.append(body);svg.append(group);return group;
+    }
+    function drawEdge(x1,y1,x2,y2,drawn=false) {
+      const d=`M ${x1} ${y1} C ${x1+30} ${y1}, ${x2-35} ${y2}, ${x2-18} ${y2}`;
+      svg.append(svgEl('path',{d,class:'trie-edge'}));
+      const trace=svgEl('path',{d,class:'trie-trace',pathLength:'1'});svg.append(trace);
+      if(drawn)requestAnimationFrame(()=>trace.classList.add('drawn'));
+      return trace;
+    }
+    const pathX = i => startX+i*pathGap;
+    path.slice(1).forEach((item,i)=>drawEdge(pathX(i)+18,baseline,pathX(i+1),baseline,i+1<=currentStep));
+    path.forEach((item,i)=>drawNode(pathX(i),baseline,i===0?'⌂':item.ch,item.end,`${i<=currentStep?'active':''} ${i<currentStep?'visited':''} ${i===currentStep?'current entering':''}`));
+    let leafIndex=0, branchIndex=0;
+    function branch(item,parentX,parentY,depth) {
+      const grandchildren=depth<2?(item.kids||[]).slice(0,6):[];
+      const slots=Math.max(1,grandchildren.reduce((sum,kid)=>sum+Math.max(1,(kid.kids||[]).slice(0,6).length),0));
+      const ownY=top+(leafIndex+(slots-1)/2)*rowGap;
+      const x=parentX+branchGap;
+      const group=svgEl('g',{class:`trie-branch${item.end?' word':''}`});
+      group.style.setProperty('--delay',`${branchIndex++*45}ms`);
+      group.style.setProperty('--dx',`${(parentX-x)/2}px`);group.style.setProperty('--dy',`${(parentY-ownY)/2}px`);
+      const d=`M ${parentX+19} ${parentY} C ${parentX+48} ${parentY}, ${x-43} ${ownY}, ${x-19} ${ownY}`;
+      group.append(svgEl('path',{d,class:'trie-edge'}));const trace=svgEl('path',{d,class:'trie-trace',pathLength:'1'});group.append(trace);
+      const g=svgEl('g',{transform:`translate(${x} ${ownY})`,class:'trie-node active visited'}),body=svgEl('g',{class:'trie-body'});
+      body.append(svgEl('circle',{r:20,class:'trie-halo'}),svgEl('circle',{r:18,class:'trie-disc'}));const glyph=svgEl('text',{y:-1,class:'trie-glyph'});glyph.textContent=item.ch;body.append(glyph);const label=svgEl('text',{y:34,class:'trie-label'});label.textContent=item.end?'word':'node';body.append(label);g.append(body);group.append(g);svg.append(group);
+      requestAnimationFrame(()=>{group.classList.add('revealed');trace.classList.add('drawn');});
+      if(grandchildren.length){
+        grandchildren.forEach(kid=>branch(kid,x,ownY,depth+1));
+        const omitted=Math.max(0,(item.kids||[]).length-grandchildren.length)+Number(item.more||0);
+        if(omitted>0){const more=svgEl('text',{x:x+35,y:ownY+4,class:'trie-label'});more.textContent='+'+omitted;svg.append(more);}
+      } else leafIndex++;
+      if(!grandchildren.length&&Number(item.more||0)>0){const more=svgEl('text',{x:x+35,y:ownY+4,class:'trie-label'});more.textContent='+'+item.more;svg.append(more);}
+    }
+    if(children.length) children.forEach(item=>branch(item,pathEndX,baseline,1));
+    else if (complete) { const message=svgEl('text',{x:pathEndX+92,y:baseline+90,fill:'#849187','font-size':'11','text-anchor':'middle'});message.textContent=treeData&&treeData.found?'No next branches':'No trie path starts with this prefix';svg.append(message); }
+    else { const message=svgEl('text',{x:Math.max(340,pathEndX+88),y:baseline+90,fill:'#849187','font-size':'11','text-anchor':'middle'});message.textContent='Step through the prefix to reveal its branches';svg.append(message); }
+    if(children.length){const omitted=Math.max(0,(prefixNode.kids||[]).length-children.length)+Number(prefixNode.more||0);if(omitted){const more=svgEl('text',{x:pathEndX+branchGap,y:height-12,class:'trie-label'});more.textContent='+'+omitted+' more completion branches';svg.append(more);}}
     $('trieMetricChars').textContent = String(prefix.length);
     $('trieMetricNodes').textContent = complete ? labData.trie.visited.toLocaleString() : Math.min(currentStep+1,path.length).toLocaleString();
     $('trieMetricMatches').textContent = complete ? labData.trie.candidate_count.toLocaleString() : '—';
@@ -505,9 +587,9 @@
     const trieShown = Math.min(currentStep,prefixNodes.length); const scanShown = Math.min(currentStep,sample.length);
     const trie = $('compareTrie'); trie.replaceChildren();
     const root = document.createElement('span'); root.className = 'sequence-node visited'; root.textContent = 'root'; trie.append(root);
-    prefixNodes.forEach((node,i) => { const arrow=document.createElement('span');arrow.className='sequence-arrow';arrow.textContent='→';trie.append(arrow);const el=document.createElement('span');el.className='sequence-node'+(i<trieShown?' visited':'')+(i===trieShown-1&&trieShown>0?' current':'');el.textContent=node.ch;trie.append(el); });
+    prefixNodes.forEach((node,i) => { const arrow=document.createElement('span');arrow.className='sequence-arrow'+(i<trieShown?' followed':'');arrow.textContent='→';trie.append(arrow);const el=document.createElement('span');el.className='sequence-node'+(i<trieShown?' visited':'')+(i===trieShown-1&&trieShown>0?' current':'')+(stepDirection>0&&currentStep>0&&currentStep<=prefixNodes.length&&i===currentStep-1?' just-followed':'');el.textContent=node.ch;trie.append(el); });
     const scan = $('compareScan'); scan.replaceChildren();
-    sample.forEach((item,i) => { const el=document.createElement('span');el.className='scan-word'+(i<scanShown?' checked':'')+(item.matches?' match':'');el.textContent=item.word;el.title=item.matches?'Matches this prefix':'Does not match this prefix';scan.append(el); });
+    sample.forEach((item,i) => { const el=document.createElement('span');el.className='scan-word'+(i<scanShown?' checked':'')+(item.matches?' match':'')+(stepDirection>0&&currentStep>0&&currentStep<=sample.length&&i===currentStep-1?' just-checked':'')+(stepDirection<0&&currentStep<sample.length&&i===currentStep?' just-unchecked':'');el.textContent=item.word;el.title=item.matches?'Matches this prefix':'Does not match this prefix';scan.append(el); });
     if(labData.scan.checked>sample.length){const more=document.createElement('span');more.className='scan-more';more.textContent='+'+(labData.scan.checked-sample.length).toLocaleString()+' more';scan.append(more);}
     const done = currentStep >= stepLimit();
     $('compareTrieResult').textContent = done ? 'Followed '+prefixNodes.length+' prefix edges, then explored matching branches. '+labData.trie.visited.toLocaleString()+' trie nodes visited.' : trieShown+' of '+prefixNodes.length+' prefix edges followed.';
@@ -516,12 +598,13 @@
     else if(done) showExplain('compareExplain','Finished: the trie follows the prefix path and explores its matching subtree, while the scan examines all '+labData.scan.checked.toLocaleString()+' words. The chips show its first '+sample.length+' checks; the rest are summarized.');
     else showExplain('compareExplain','Both lanes move together: '+(trieShown?trieShown+' trie edge'+(trieShown===1?'':'s')+' followed':'the trie is at its root')+' and '+scanShown+' initial scan check'+(scanShown===1?'':'s')+' revealed.');
   }
-  function renderHeap(svg, items) {
+  function renderHeap(svg, items, event, final) {
     svg.replaceChildren();
     const points=[{x:240,y:54},{x:150,y:132},{x:330,y:132},{x:105,y:204},{x:195,y:204}];
     for(let i=1;i<items.length;i++){const parent=Math.floor((i-1)/2),a=points[parent],b=points[i];svg.append(svgEl('line',{x1:a.x,y1:a.y+22,x2:b.x,y2:b.y-21,stroke:'#46584b','stroke-width':'2'}));}
-    items.forEach((item,i)=>{const p=points[i],g=svgEl('g'),fontSize=Math.min(12,Math.max(7,90/item.word.length));g.append(svgEl('rect',{x:p.x-51,y:p.y-20,width:102,height:40,rx:11,fill:i===0?'#453728':'#2d4032',stroke:i===0?'#d3a16b':'#7da181','stroke-width':i===0?'2':'1.4'}));svgText(g,p.x,p.y-2,item.word,{fill:i===0?'#f0c992':'#c6dec4','font-size':String(fontSize),'font-weight':'600'});svgText(g,p.x,p.y+12,Number(item.frequency).toLocaleString(),{fill:'#a4b0a6','font-size':'8'});svg.append(g);});
+    items.forEach((item,i)=>{const p=points[i],g=svgEl('g'),fontSize=Math.min(12,Math.max(7,90/item.word.length));let motion='';if(event&&item.word===event.candidate&&(event.action==='kept'||event.action==='replaced'))motion=' heap-enter';else if(event&&event.action==='discarded'&&i===0)motion=' heap-root-change';else if(event)motion=' heap-settle';g.setAttribute('class','heap-node'+motion);g.style.setProperty('--heap-delay',`${i*35}ms`);g.append(svgEl('rect',{x:p.x-51,y:p.y-20,width:102,height:40,rx:11,fill:i===0?'#453728':'#2d4032',stroke:i===0?'#d3a16b':'#7da181','stroke-width':i===0?'2':'1.4'}));svgText(g,p.x,p.y-2,item.word,{fill:i===0?'#f0c992':'#c6dec4','font-size':String(fontSize),'font-weight':'600'});svgText(g,p.x,p.y+12,Number(item.frequency).toLocaleString(),{fill:'#a4b0a6','font-size':'8'});svg.append(g);});
     if(!items.length)svgText(svg,240,120,'Heap is empty',{fill:'#a4b0a6','font-size':'12'});
+    else if(final)items.forEach((_,i)=>{const node=svg.children[i+items.length-1];if(node)node.classList.add('heap-settle');});
   }
   function renderTopK() {
     const data=labData.trie,trace=data.trace||[],limit=stepLimit(),final=currentStep>=limit;
@@ -529,9 +612,11 @@
     if(currentStep>0&&currentStep<=trace.length){entry=trace[currentStep-1];snapshot=entry.heap;position='Candidate '+currentStep+' of '+data.candidate_count;action=entry.action==='replaced'?'Replaced “'+entry.dropped+'” with “'+entry.candidate+'”; the old root was weaker.':entry.action==='discarded'?'Discarded “'+entry.candidate+'”; it did not beat the current top five.':'Kept “'+entry.candidate+'” in the heap.';}
     else if(final){snapshot=data.final_heap||[];position='Final heap';action=data.trace_remaining?data.trace_remaining.toLocaleString()+' later matches were processed to finish the heap.':'All matching candidates have been processed.';}
     $('heapPosition').textContent=position; $('candidateWord').textContent=entry?entry.candidate:final?'—':'—'; $('candidateAction').textContent=action;
-    renderHeap($('heapGraph'),snapshot);
+    const candidate=$('candidateWord');candidate.classList.remove('candidate-kept','candidate-replaced','candidate-rejected');
+    if(entry)candidate.classList.add(entry.action==='discarded'?'candidate-rejected':entry.action==='replaced'?'candidate-replaced':'candidate-kept');
+    renderHeap($('heapGraph'),snapshot,entry,final);
     const ranked=$('rankedList');ranked.replaceChildren();
-    if(final&&data.results.length){data.results.forEach((word,i)=>{const li=document.createElement('li'),num=document.createElement('span'),label=document.createElement('span');num.className='rank-num';num.textContent=String(i+1);label.textContent=word;li.append(num,label);ranked.append(li);});}
+    if(final&&data.results.length){data.results.forEach((word,i)=>{const li=document.createElement('li'),num=document.createElement('span'),label=document.createElement('span');li.className='rank-enter';li.style.setProperty('--rank-delay',`${i*75}ms`);num.className='rank-num';num.textContent=String(i+1);label.textContent=word;li.append(num,label);ranked.append(li);});}
     else {const li=document.createElement('li');li.className='ranked-empty';li.textContent=final?'No words match this prefix.':'Final suggestions appear after the candidates are processed.';ranked.append(li);}
     $('topkSummary').textContent=final?'The heap is organized by priority; the result list is sorted by frequency, then alphabetically. '+data.candidate_count.toLocaleString()+' candidates considered.':'This heap contains '+snapshot.length+' of 5 slots. Its root is the weakest retained candidate.';
     if(!data.found)showExplain('topkExplain','No trie path matches “'+labData.prefix+'”, so there are no candidates to add.');
